@@ -418,6 +418,8 @@
       <button class="tab active" data-project="cbm" onclick="switchTab(this)">CBM Holding</button>
       <button class="tab" data-project="printxu" onclick="switchTab(this)">PrintXu</button>
       <button class="tab" data-project="studyo" onclick="switchTab(this)">Studyo</button>
+      <button class="tab" data-project="studioxu" onclick="switchTab(this)" style="color:#a78bfa">StudioXu.ai</button>
+      <button class="tab" data-project="talentbm" onclick="switchTab(this)" style="color:#f472b6">TalentBM</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -689,10 +691,10 @@ const clients = {
   )
 };
 
-const PROJECT_LABELS = { cbm: 'CBM', printxu: 'PrintXu', studyo: 'Studyo' };
+const PROJECT_LABELS = { cbm: 'CBM', printxu: 'PrintXu', studyo: 'Studyo', studioxu: 'StudioXu', talentbm: 'TalentBM' };
 
 // ── State ──
-let allAgents = { cbm: [], printxu: [], studyo: [] };
+let allAgents = { cbm: [], printxu: [], studyo: [], studioxu: [], talentbm: [] };
 let activeTab = 'cbm';
 let autoRefreshTimer = null;
 
@@ -885,7 +887,7 @@ async function fetchHealthSnapshots() {
 
 // ── Rendering ──
 function renderSummary() {
-  const all = [...allAgents.cbm, ...allAgents.printxu, ...allAgents.studyo];
+  const all = [...allAgents.cbm, ...allAgents.printxu, ...allAgents.studyo, ...allAgents.studioxu, ...allAgents.talentbm];
   const statuses = all.map(agentStatus);
   document.getElementById('sumTotal').textContent = all.length;
   document.getElementById('sumActive').textContent = statuses.filter(s => s === 'active').length;
@@ -1370,9 +1372,11 @@ async function refreshAll() {
       fetchEvolution()
     ]);
 
-    allAgents.cbm = cbmAgents;
+    allAgents.cbm = cbmAgents.filter(a => !a.agent_id.startsWith('SXU_') && !a.agent_id.startsWith('TBM_'));
     allAgents.printxu = printxuAgents;
     allAgents.studyo = studyoAgents;
+    allAgents.studioxu = cbmAgents.filter(a => a.agent_id.startsWith('SXU_'));
+    allAgents.talentbm = cbmAgents.filter(a => a.agent_id.startsWith('TBM_'));
 
     renderSummary();
     renderAgentTable();
