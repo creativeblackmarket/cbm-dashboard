@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CBM - Agent Kontrol Merkezi</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1613,8 +1613,13 @@ function addToLiveFeed(msg) {
 }
 
 // ── Init ──
-document.addEventListener('DOMContentLoaded', () => {
-  refreshAll();
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await refreshAll();
+  } catch(e) {
+    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">HATA: ' + e.message + '</td></tr>';
+    console.error('INIT ERROR:', e);
+  }
   setupAutoRefresh();
   startFeed();
   setupRealtime();
