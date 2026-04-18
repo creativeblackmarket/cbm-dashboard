@@ -1349,6 +1349,11 @@ function switchTab(el) {
 }
 
 // ── Refresh ──
+async function safeFetch(name, fn) {
+  try { return await fn(); }
+  catch (e) { console.warn('safeFetch ' + name + ':', e); return name === 'finance' ? { costs: [], reports: [] } : []; }
+}
+
 async function refreshAll() {
   const btn = document.getElementById('btnRefresh');
   btn.disabled = true;
@@ -1356,48 +1361,51 @@ async function refreshAll() {
 
   try {
     const [cbmAgents, printxuAgents, studyoAgents, messages, decisions, crossMsgs, cbmAppr, pxAppr, stAppr, health, reports, cronJobs, finance, plugins, orgChart, engineering, evolution] = await Promise.all([
-      fetchAgentRegistry('cbm'),
-      fetchAgentRegistry('printxu'),
-      fetchAgentRegistry('studyo'),
-      fetchMessages(),
-      fetchDecisions(),
-      fetchCrossMessages(),
-      fetchApprovals('cbm'),
-      fetchApprovals('printxu'),
-      fetchApprovals('studyo'),
-      fetchHealthSnapshots(),
-      fetchAgentReports(),
-      fetchCronJobs(),
-      fetchFinancialData(),
-      fetchPlugins(),
-      fetchOrgChart(),
-      fetchEngineering(),
-      fetchEvolution()
+      safeFetch('cbm', () => fetchAgentRegistry('cbm')),
+      safeFetch('printxu', () => fetchAgentRegistry('printxu')),
+      safeFetch('studyo', () => fetchAgentRegistry('studyo')),
+      safeFetch('messages', fetchMessages),
+      safeFetch('decisions', fetchDecisions),
+      safeFetch('crossMsgs', fetchCrossMessages),
+      safeFetch('cbmAppr', () => fetchApprovals('cbm')),
+      safeFetch('pxAppr', () => fetchApprovals('printxu')),
+      safeFetch('stAppr', () => fetchApprovals('studyo')),
+      safeFetch('health', fetchHealthSnapshots),
+      safeFetch('reports', fetchAgentReports),
+      safeFetch('cronJobs', fetchCronJobs),
+      safeFetch('finance', fetchFinancialData),
+      safeFetch('plugins', fetchPlugins),
+      safeFetch('orgChart', fetchOrgChart),
+      safeFetch('engineering', fetchEngineering),
+      safeFetch('evolution', fetchEvolution)
     ]);
 
-    allAgents.cbm = cbmAgents.filter(a => !a.agent_id.startsWith('SXU_') && !a.agent_id.startsWith('TBM_'));
-    allAgents.printxu = printxuAgents;
-    allAgents.studyo = studyoAgents;
-    allAgents.studioxu = cbmAgents.filter(a => a.agent_id.startsWith('SXU_'));
-    allAgents.talentbm = cbmAgents.filter(a => a.agent_id.startsWith('TBM_'));
+    allAgents.cbm = (cbmAgents || []).filter(a => !a.agent_id.startsWith('SXU_') && !a.agent_id.startsWith('TBM_'));
+    allAgents.printxu = printxuAgents || [];
+    allAgents.studyo = studyoAgents || [];
+    allAgents.studioxu = (cbmAgents || []).filter(a => a.agent_id.startsWith('SXU_'));
+    allAgents.talentbm = (cbmAgents || []).filter(a => a.agent_id.startsWith('TBM_'));
+
+    console.log('Agent counts - CBM:', allAgents.cbm.length, 'PX:', allAgents.printxu.length, 'ST:', allAgents.studyo.length, 'SXU:', allAgents.studioxu.length, 'TBM:', allAgents.talentbm.length);
 
     renderSummary();
     renderAgentTable();
-    renderConversations(messages, decisions);
-    renderCrossMessages(crossMsgs);
-    renderApprovals([...cbmAppr, ...pxAppr, ...stAppr].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-    renderReports(reports);
-    renderCronJobs(cronJobs);
-    renderFinance(finance);
-    renderPlugins(plugins);
-    renderOrgChart(orgChart);
-    renderEngineering(engineering);
-    renderEvolution(evolution);
-    renderHealth(health);
+    renderConversations(messages || [], decisions || []);
+    renderCrossMessages(crossMsgs || []);
+    renderApprovals([...(cbmAppr||[]), ...(pxAppr||[]), ...(stAppr||[])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+    renderReports(reports || []);
+    renderCronJobs(cronJobs || []);
+    renderFinance(finance || { costs: [], reports: [] });
+    renderPlugins(plugins || []);
+    renderOrgChart(orgChart || []);
+    renderEngineering(engineering || []);
+    renderEvolution(evolution || []);
+    renderHealth(health || []);
 
     document.getElementById('lastRefresh').textContent = 'Son: ' + new Date().toLocaleTimeString('tr-TR');
   } catch (e) {
     console.error('Refresh error:', e);
+    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">Refresh hata: ' + (e.message||e) + '</td></tr>';
   } finally {
     btn.disabled = false;
     btn.textContent = 'Yenile';
@@ -1614,10 +1622,15 @@ function addToLiveFeed(msg) {
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {
+  // Quick client sanity check
+  if (typeof supabase === 'undefined' || !clients.cbm) {
+    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">Supabase client yuklenemedi! CDN erisim sorunu olabilir.</td></tr>';
+    return;
+  }
   try {
     await refreshAll();
   } catch(e) {
-    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">HATA: ' + e.message + '</td></tr>';
+    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">HATA: ' + (e.message||e) + '</td></tr>';
     console.error('INIT ERROR:', e);
   }
   setupAutoRefresh();
