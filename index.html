@@ -212,6 +212,65 @@ a:hover { text-decoration: underline; }
 }
 .sidebar.collapsed .nav-badge { display: none; }
 
+/* ========== SUB-BRAND LOGOS ========== */
+.sidebar-brands {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-default);
+  flex-shrink: 0;
+}
+.sidebar-brands-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-tertiary);
+  padding: 4px 4px 8px;
+}
+.sidebar.collapsed .sidebar-brands-label { display: none; }
+.brand-logos {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.brand-logo-btn {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: -0.5px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all var(--transition);
+  text-decoration: none;
+  position: relative;
+}
+.brand-logo-btn:hover {
+  transform: scale(1.1);
+  border-color: rgba(255,255,255,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  text-decoration: none;
+}
+.brand-logo-btn .brand-tooltip {
+  display: none;
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-weight: 500;
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+}
+.brand-logo-btn:hover .brand-tooltip { display: block; }
+
 .sidebar-footer {
   padding: 12px;
   border-top: 1px solid var(--border-default);
@@ -926,6 +985,15 @@ td .agent-name { font-weight: 600; color: var(--text-primary); }
       <div class="brand-text"><span>Creative</span> Black Market</div>
     </div>
     <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-brands">
+      <div class="sidebar-brands-label">Admin Panelleri</div>
+      <div class="brand-logos">
+        <a class="brand-logo-btn" style="background:#7c3aed" href="https://studioxu-ai.web.app/admin" target="_blank">
+          SX
+          <span class="brand-tooltip">StudioXu Admin ↗</span>
+        </a>
+      </div>
+    </div>
     <div class="sidebar-footer">
       <button class="sidebar-collapse-btn" onclick="toggleSidebar()">
         <span id="collapseIcon">◁</span>
@@ -992,11 +1060,11 @@ const SUPABASE_URL = 'https://ggvamhyaposgwoixxwca.supabase.co';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndmFtaHlhcG9zZ3dvaXh4d2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MDg2MzcsImV4cCI6MjA4OTQ4NDYzN30.lRVKnmp_b97SiTz8VudSwEBwFxvTTghejaf-TFZFhqs';
 
 const PROJECTS = {
-  cbm: { name: 'CBM Holding', color: '#c8a44e', agents: 15, supabase: SUPABASE_URL },
-  printxu: { name: 'PrintXu', color: '#3b82f6', agents: 16, supabase: 'https://finkngmejydwqikinbdv.supabase.co' },
-  studyo: { name: 'Studyo', color: '#8b5cf6', agents: 14, supabase: 'https://jlinpfqqssqclsyhptfz.supabase.co' },
-  sxu: { name: 'StudioXu', color: '#ec4899', agents: 8, supabase: SUPABASE_URL },
-  tbm: { name: 'TalentBM', color: '#14b8a6', agents: 6, supabase: SUPABASE_URL }
+  cbm: { name: 'CBM Holding', color: '#c8a44e', agents: 15, supabase: SUPABASE_URL, admin: null },
+  printxu: { name: 'PrintXu', color: '#3b82f6', agents: 16, supabase: 'https://finkngmejydwqikinbdv.supabase.co', admin: null },
+  studyo: { name: 'Studyo', color: '#8b5cf6', agents: 14, supabase: 'https://jlinpfqqssqclsyhptfz.supabase.co', admin: null },
+  sxu: { name: 'StudioXu', color: '#ec4899', agents: 8, supabase: SUPABASE_URL, admin: 'https://studioxu-ai.web.app/admin' },
+  tbm: { name: 'TalentBM', color: '#14b8a6', agents: 6, supabase: SUPABASE_URL, admin: null }
 };
 
 let sb;
@@ -1074,13 +1142,22 @@ const NAV_ITEMS = [
   { id: 'org', icon: '◫', label: 'Org Chart' },
   { id: 'engineering', icon: '⚙', label: 'Mühendislik' },
   { id: 'health', icon: '♡', label: 'Sistem Sagligi' },
-  { id: 'command', icon: '▷', label: 'Komut Merkezi' }
+  { id: 'command', icon: '▷', label: 'Komut Merkezi' },
+  { section: 'Admin Panelleri' },
+  { id: 'sxu-admin', icon: '◆', label: 'StudioXu Admin', external: 'https://studioxu-ai.web.app/admin', color: '#7c3aed' }
 ];
 
 function renderNav() {
   const nav = document.getElementById('sidebarNav');
   nav.innerHTML = NAV_ITEMS.map(item => {
     if (item.section) return `<div class="nav-section-label">${item.section}</div>`;
+    if (item.external) {
+      return `<div class="nav-item" onclick="window.open('${item.external}','_blank')" title="${item.label}">
+        <span class="nav-icon" ${item.color ? `style="color:${item.color}"` : ''}>${item.icon}</span>
+        <span class="nav-label">${item.label}</span>
+        <span class="nav-label" style="margin-left:auto;font-size:10px;color:var(--text-tertiary)">↗</span>
+      </div>`;
+    }
     const active = state.currentPage === item.id ? 'active' : '';
     const badge = item.badge > 0 ? `<span class="nav-badge">${item.badge}</span>` : '';
     return `<div class="nav-item ${active}" data-page="${item.id}" onclick="navigateTo('${item.id}')">
@@ -1484,10 +1561,12 @@ function renderOverview() {
         const projAgents = agents.filter(a => (a.project||'').toLowerCase().includes(key));
         const projErrors = projAgents.filter(a => a.status === 'error').length;
         const dot = projErrors > 0 ? 'red' : projAgents.length === 0 ? 'yellow' : 'green';
-        return `<div class="health-item">
+        const adminLink = p.admin ? `onclick="window.open('${p.admin}','_blank')" style="cursor:pointer" title="${p.name} Admin Paneli"` : '';
+        return `<div class="health-item" ${adminLink}>
           <span class="status-dot ${dot}"></span>
           <span class="project-name" style="font-weight:600">${p.name}</span>
           <span class="agent-count">${projAgents.length || p.agents} agent</span>
+          ${p.admin ? '<span style="font-size:10px;color:var(--text-tertiary);margin-left:4px">↗</span>' : ''}
         </div>`;
       }).join('')}
     </div>
@@ -1562,9 +1641,10 @@ function renderOverview() {
         ${Object.entries(PROJECTS).map(([key, p]) => {
           const count = agents.filter(a => (a.project||'').toLowerCase().includes(key)).length || p.agents;
           const pct = Math.round(count / (agents.length || 59) * 100);
-          return `<div style="flex:1;min-width:150px;padding:16px;border:1px solid var(--border-default);border-radius:var(--radius);text-align:center">
+          const clickAttr = p.admin ? `onclick="window.open('${p.admin}','_blank')" style="flex:1;min-width:150px;padding:16px;border:1px solid var(--border-default);border-radius:var(--radius);text-align:center;cursor:pointer;transition:all var(--transition)" onmouseover="this.style.borderColor='${p.color}'" onmouseout="this.style.borderColor='var(--border-default)'"` : `style="flex:1;min-width:150px;padding:16px;border:1px solid var(--border-default);border-radius:var(--radius);text-align:center"`;
+          return `<div ${clickAttr}>
             <div style="font-size:24px;font-weight:700;color:${p.color}">${count}</div>
-            <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">${p.name}</div>
+            <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">${p.name}${p.admin ? ' <span style="font-size:10px">↗</span>' : ''}</div>
             <div style="margin-top:8px;height:4px;background:var(--bg-hover);border-radius:2px;overflow:hidden">
               <div style="width:${pct}%;height:100%;background:${p.color};border-radius:2px"></div>
             </div>
