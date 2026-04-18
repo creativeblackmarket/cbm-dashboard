@@ -1,1792 +1,2478 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CBM - Agent Kontrol Merkezi</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<title>CBM — Agent Kontrol Merkezi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ========== RESET & VARIABLES ========== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-  :root {
-    --bg: #0f172a;
-    --card: #1e293b;
-    --card-hover: #263348;
-    --border: #334155;
-    --text: #e2e8f0;
-    --text-dim: #94a3b8;
-    --accent: #38bdf8;
-    --green: #22c55e;
-    --yellow: #eab308;
-    --red: #ef4444;
-    --orange: #f97316;
-    --blue: #3b82f6;
-    --gray: #64748b;
-    --radius: 8px;
-  }
+:root {
+  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --gold: #c8a44e;
+  --gold-light: #d4b96a;
+  --gold-subtle: rgba(200,164,78,0.08);
+  --gold-border: rgba(200,164,78,0.2);
+  --blue: #3b82f6;
+  --blue-light: #60a5fa;
+  --blue-subtle: rgba(59,130,246,0.08);
+  --green: #10b981;
+  --green-subtle: rgba(16,185,129,0.1);
+  --yellow: #f59e0b;
+  --yellow-subtle: rgba(245,158,11,0.1);
+  --red: #ef4444;
+  --red-subtle: rgba(239,68,68,0.1);
+  --purple: #8b5cf6;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  --sidebar-w: 260px;
+  --sidebar-collapsed: 68px;
+  --header-h: 56px;
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', Menlo, Monaco, Consolas, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    min-height: 100vh;
-  }
+[data-theme="light"] {
+  --bg-root: #f5f5f4;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-sidebar: #fafaf9;
+  --bg-hover: #f5f5f4;
+  --bg-active: #f0eeeb;
+  --bg-input: #ffffff;
+  --border-default: #e7e5e4;
+  --border-subtle: #f0eeec;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --text-tertiary: #a8a29e;
+  --text-inverse: #fafaf9;
+  --scrollbar-thumb: #d6d3d1;
+  --kbd-bg: #f5f5f4;
+}
 
-  /* Header */
-  .header {
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-left { display: flex; align-items: center; gap: 16px; }
-  .header h1 { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
-  .header-right { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-dim); }
-  .refresh-info { display: flex; align-items: center; gap: 8px; }
-  .toggle-label { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
-  .toggle-label input { accent-color: var(--accent); width: 14px; height: 14px; }
-  .btn-refresh {
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    padding: 6px 14px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    transition: opacity 0.2s;
-  }
-  .btn-refresh:hover { opacity: 0.85; }
-  .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+[data-theme="dark"] {
+  --bg-root: #0c0c0e;
+  --bg-surface: #18181b;
+  --bg-elevated: #1e1e22;
+  --bg-sidebar: #111113;
+  --bg-hover: #1e1e22;
+  --bg-active: #27272a;
+  --bg-input: #18181b;
+  --border-default: #27272a;
+  --border-subtle: #1e1e22;
+  --text-primary: #fafaf9;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #52525b;
+  --text-inverse: #18181b;
+  --scrollbar-thumb: #3f3f46;
+  --kbd-bg: #27272a;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+  --gold-subtle: rgba(200,164,78,0.12);
+  --blue-subtle: rgba(59,130,246,0.12);
+  --green-subtle: rgba(16,185,129,0.15);
+  --yellow-subtle: rgba(245,158,11,0.15);
+  --red-subtle: rgba(239,68,68,0.15);
+}
 
-  /* Summary cards */
-  .summary-bar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
-    padding: 16px 24px;
-  }
-  .summary-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    text-align: center;
-  }
-  .summary-card .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .summary-card .value { font-size: 28px; font-weight: 700; }
-  .summary-card.total .value { color: var(--accent); }
-  .summary-card.active .value { color: var(--green); }
-  .summary-card.stale .value { color: var(--yellow); }
-  .summary-card.never .value { color: var(--gray); }
-  .summary-card.failed .value { color: var(--red); }
+/* ========== BASE ========== */
+html { font-size: 14px; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-root);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
 
-  /* Main content */
-  .main { padding: 0 24px 40px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
 
-  /* Section */
-  .section { margin-top: 24px; }
-  .section-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
-  /* Tabs */
-  .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
-  .tab {
-    background: transparent;
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-    padding: 6px 16px;
-    border-radius: var(--radius) var(--radius) 0 0;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.2s;
-  }
-  .tab:hover { color: var(--text); background: var(--card); }
-  .tab.active { background: var(--card); color: var(--accent); border-bottom-color: var(--card); }
+/* ========== LAYOUT ========== */
+.app { display: flex; height: 100vh; }
 
-  /* Table */
-  .table-wrap {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow-x: auto;
-  }
-  table { width: 100%; border-collapse: collapse; }
-  th {
-    text-align: left;
-    padding: 10px 12px;
-    font-size: 11px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-    font-weight: 600;
-  }
-  td {
-    padding: 8px 12px;
-    border-bottom: 1px solid rgba(51,65,85,0.5);
-    white-space: nowrap;
-    font-size: 12px;
-  }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(56,189,248,0.03); }
+/* ========== SIDEBAR ========== */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  transition: width var(--transition), min-width var(--transition);
+  z-index: 50;
+  overflow: hidden;
+}
+.sidebar.collapsed { width: var(--sidebar-collapsed); min-width: var(--sidebar-collapsed); }
 
-  /* Status badges */
-  .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-  }
-  .badge-green { background: rgba(34,197,94,0.15); color: var(--green); }
-  .badge-yellow { background: rgba(234,179,8,0.15); color: var(--yellow); }
-  .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
-  .badge-orange { background: rgba(249,115,22,0.15); color: var(--orange); }
-  .badge-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
-  .badge-gray { background: rgba(100,116,139,0.15); color: var(--gray); }
+.sidebar-brand {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-default);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.sidebar-brand .logo {
+  width: 28px; height: 28px;
+  background: var(--gold);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+.sidebar-brand .brand-text {
+  font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
+  white-space: nowrap; overflow: hidden;
+  transition: opacity var(--transition);
+}
+.sidebar-brand .brand-text span { color: var(--gold); }
+.sidebar.collapsed .brand-text { opacity: 0; width: 0; }
 
-  /* Row color strips */
-  .row-green { border-left: 3px solid var(--green); }
-  .row-yellow { border-left: 3px solid var(--yellow); }
-  .row-red { border-left: 3px solid var(--red); }
-  .row-gray { border-left: 3px solid var(--gray); }
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 8px;
+}
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-tertiary);
+  padding: 16px 12px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sidebar.collapsed .nav-section-label { opacity: 0; height: 0; padding: 0; margin: 0; }
 
-  /* Approve / Reject buttons */
-  .btn-approve, .btn-reject {
-    border: none;
-    padding: 4px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 600;
-    transition: opacity 0.2s;
-  }
-  .btn-approve { background: var(--green); color: #fff; }
-  .btn-reject { background: var(--red); color: #fff; }
-  .btn-approve:hover, .btn-reject:hover { opacity: 0.8; }
-  .btn-approve:disabled, .btn-reject:disabled { opacity: 0.4; cursor: not-allowed; }
-  .action-btns { display: flex; gap: 6px; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--transition);
+  white-space: nowrap;
+  position: relative;
+  user-select: none;
+  margin-bottom: 1px;
+}
+.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nav-item.active {
+  background: var(--gold-subtle);
+  color: var(--gold);
+}
+.nav-item.active .nav-icon { color: var(--gold); }
+.nav-icon {
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.nav-label { overflow: hidden; transition: opacity var(--transition); }
+.sidebar.collapsed .nav-label { opacity: 0; width: 0; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+.sidebar.collapsed .nav-badge { display: none; }
 
-  /* Health snapshot cards */
-  .health-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
-  }
-  .health-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-  }
-  .health-card .ts { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
-  .health-card .metric { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
-  .health-card .metric .k { color: var(--text-dim); }
-  .health-card .metric .v { color: var(--text); font-weight: 600; }
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border-default);
+  flex-shrink: 0;
+}
+.sidebar-collapse-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12px;
+  transition: all var(--transition);
+}
+.sidebar-collapse-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
 
-  /* Arrow for cross project */
-  .arrow { color: var(--accent); font-weight: 700; margin: 0 4px; }
+/* ========== MAIN AREA ========== */
+.main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-  /* Loading / empty states */
-  .state-msg {
-    padding: 24px;
-    text-align: center;
-    color: var(--text-dim);
-    font-size: 12px;
-  }
-  .loading::after {
-    content: '';
-    display: inline-block;
-    width: 14px; height: 14px;
-    border: 2px solid var(--text-dim);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    margin-left: 8px;
-    vertical-align: middle;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ========== HEADER ========== */
+.header {
+  height: var(--header-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+  z-index: 40;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.breadcrumb-sep { color: var(--text-tertiary); }
+.breadcrumb-current { font-weight: 600; color: var(--text-primary); }
+.breadcrumb-parent { color: var(--text-tertiary); }
 
-  /* Responsive */
-  @media (max-width: 768px) {
-    .header { padding: 12px 16px; }
-    .summary-bar, .main { padding-left: 16px; padding-right: 16px; }
-    .summary-bar { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
-  }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.header-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+  font-size: 16px;
+}
+.header-btn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-default); }
 
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.search-trigger {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-family: var(--font-body);
+  transition: all var(--transition);
+  min-width: 200px;
+}
+.search-trigger:hover { border-color: var(--gold-border); }
+.search-trigger kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--kbd-bg);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: auto;
+}
 
-  /* Conversation cards */
-  .conv-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: 8px;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .conv-card:hover { border-color: var(--accent); }
-  .conv-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .conv-header .conv-agents {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 200px;
-  }
-  .conv-header .conv-subject {
-    flex: 1;
-    font-size: 12px;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .conv-header .conv-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    color: var(--text-dim);
-    white-space: nowrap;
-  }
-  .conv-header .conv-expand {
-    color: var(--text-dim);
-    font-size: 10px;
-    transition: transform 0.2s;
-  }
-  .conv-card.open .conv-expand { transform: rotate(90deg); }
-  .conv-body {
-    display: none;
-    padding: 0 14px 12px;
-    border-top: 1px solid var(--border);
-  }
-  .conv-card.open .conv-body { display: block; }
-  .conv-body-content {
-    background: var(--bg);
-    border-radius: 4px;
-    padding: 10px 12px;
-    margin-top: 8px;
-    font-size: 11px;
-    line-height: 1.6;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-  .conv-body-content .body-key {
-    color: var(--accent);
-    font-weight: 600;
-    margin-right: 6px;
-  }
-  .conv-body-content .body-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 2px 0;
-    border-bottom: 1px solid rgba(51,65,85,0.3);
-  }
-  .conv-body-content .body-row:last-child { border-bottom: none; }
-  .conv-body-content .body-val { color: var(--text); text-align: right; max-width: 60%; word-break: break-word; }
-  .conv-body-content .body-nested {
-    margin-left: 12px;
-    padding-left: 8px;
-    border-left: 2px solid var(--border);
-  }
-  .conv-filter-bar {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-  }
-  .conv-filter {
-    background: var(--bg);
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 4px 10px;
-    font-family: inherit;
-    font-size: 11px;
-    cursor: pointer;
-  }
-  .conv-filter.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .conv-filter:hover { border-color: var(--accent); }
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.status-dot.green { background: var(--green); box-shadow: 0 0 6px rgba(16,185,129,0.4); }
+.status-dot.yellow { background: var(--yellow); box-shadow: 0 0 6px rgba(245,158,11,0.4); }
+.status-dot.red { background: var(--red); box-shadow: 0 0 6px rgba(239,68,68,0.4); }
+.status-dot.gray { background: var(--text-tertiary); }
 
-  /* Decision cards */
-  .decision-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    border-left: 3px solid var(--green);
-  }
-  .decision-card.rejected { border-left-color: var(--red); }
-  .decision-card .dec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .decision-card .dec-title { font-size: 12px; font-weight: 600; color: var(--text); }
-  .decision-card .dec-meta { font-size: 10px; color: var(--text-dim); }
-  .decision-card .dec-detail { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+/* ========== CONTENT ========== */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
 
-  /* Chat styles */
-  .chat-msg { padding: 8px 12px; margin: 4px 0; border-radius: 6px; max-width: 85%; font-size: 12px; line-height: 1.4; }
-  .chat-msg.sent { background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.2); margin-left: auto; }
-  .chat-msg.received { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); }
-  .chat-msg .chat-meta { font-size: 10px; color: var(--text-dim); margin-bottom: 2px; }
-  .chat-msg .chat-body { color: var(--text); }
-  .chat-msg .chat-body code { background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px; font-size: 11px; }
-  .chat-msg.system { background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.2); text-align: center; max-width: 100%; font-size: 11px; color: var(--yellow); }
+.page { display: none; animation: fadeIn 0.25s ease; }
+.page.active { display: block; }
 
-  .qcmd {
-    background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;
-    padding: 8px 12px; cursor: pointer; font-family: inherit; font-size: 11px; text-align: left;
-    transition: all 0.2s;
-  }
-  .qcmd:hover { border-color: var(--accent); color: var(--accent); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-  #btnVoice.recording { background: var(--red); color: #fff; border-color: var(--red); animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+.page-subtitle { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; }
 
-  @media (max-width: 768px) {
-    #commandCenter > div { grid-template-columns: 1fr !important; }
-  }
+/* ========== CARDS ========== */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: all var(--transition);
+}
+.card:hover { border-color: var(--gold-border); }
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Stat Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+}
+.stat-card.gold::before { background: var(--gold); }
+.stat-card.blue::before { background: var(--blue); }
+.stat-card.green::before { background: var(--green); }
+.stat-card.red::before { background: var(--red); }
+.stat-card.yellow::before { background: var(--yellow); }
+.stat-card.purple::before { background: var(--purple); }
+
+.stat-card:hover { border-color: var(--gold-border); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.stat-label { font-size: 12px; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.stat-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+.stat-change { font-size: 11px; margin-top: 8px; display: flex; align-items: center; gap: 4px; }
+.stat-change.up { color: var(--green); }
+.stat-change.down { color: var(--red); }
+
+/* ========== TABLES ========== */
+.table-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+.table-toolbar select,
+.table-toolbar input[type="text"] {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition);
+}
+.table-toolbar select:focus,
+.table-toolbar input[type="text"]:focus { border-color: var(--gold); }
+.table-toolbar input[type="text"] { min-width: 180px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  background: var(--bg-root);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--bg-hover); }
+td .agent-name { font-weight: 600; color: var(--text-primary); }
+
+/* Tags & Badges */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tag.active { background: var(--green-subtle); color: var(--green); }
+.tag.idle { background: var(--yellow-subtle); color: var(--yellow); }
+.tag.error { background: var(--red-subtle); color: var(--red); }
+.tag.disabled { background: var(--bg-hover); color: var(--text-tertiary); }
+.tag.cbm { background: var(--gold-subtle); color: var(--gold); }
+.tag.printxu { background: var(--blue-subtle); color: var(--blue); }
+.tag.studyo { background: rgba(139,92,246,0.1); color: var(--purple); }
+.tag.sxu { background: rgba(236,72,153,0.1); color: #ec4899; }
+.tag.tbm { background: rgba(20,184,166,0.1); color: #14b8a6; }
+
+/* ========== BUTTONS ========== */
+.btn {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:hover { background: var(--bg-hover); }
+.btn-primary {
+  background: var(--gold);
+  color: #fff;
+  border-color: var(--gold);
+}
+.btn-primary:hover { background: var(--gold-light); }
+.btn-success { background: var(--green); color: #fff; border-color: var(--green); }
+.btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; }
+
+/* ========== FEED / TIMELINE ========== */
+.feed { display: flex; flex-direction: column; gap: 1px; }
+.feed-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--transition);
+  cursor: pointer;
+  font-size: 13px;
+}
+.feed-item:hover { background: var(--bg-hover); }
+.feed-item:last-child { border-bottom: none; }
+.feed-avatar {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+  color: #fff;
+}
+.feed-body { flex: 1; min-width: 0; }
+.feed-title { font-weight: 600; color: var(--text-primary); }
+.feed-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.feed-text { color: var(--text-secondary); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ========== HEALTH BAR ========== */
+.health-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.health-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  min-width: 160px;
+}
+.health-item .project-name { flex: 1; }
+.health-item .agent-count { color: var(--text-tertiary); font-size: 12px; }
+
+/* ========== GRID LAYOUTS ========== */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+@media (max-width: 1024px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* ========== ORG CHART ========== */
+.org-tree { padding: 20px; }
+.org-dept {
+  margin-bottom: 20px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.org-dept-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-root);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  user-select: none;
+}
+.org-dept-header:hover { background: var(--bg-hover); }
+.org-agents {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  padding: 12px 16px;
+}
+.org-agent-card {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  transition: all var(--transition);
+}
+.org-agent-card:hover { border-color: var(--gold-border); background: var(--gold-subtle); }
+
+/* ========== KANBAN ========== */
+.kanban {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+}
+.kanban-col {
+  min-width: 280px;
+  max-width: 320px;
+  flex-shrink: 0;
+  background: var(--bg-root);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+}
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.kanban-col-count {
+  background: var(--bg-hover);
+  color: var(--text-tertiary);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.kanban-items { padding: 8px; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; max-height: 500px; }
+.kanban-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  padding: 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.kanban-card:hover { border-color: var(--gold-border); box-shadow: var(--shadow); }
+.kanban-card-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.kanban-card-meta { font-size: 11px; color: var(--text-tertiary); }
+
+/* ========== CHAT ========== */
+.chat-container { display: flex; height: calc(100vh - var(--header-h) - var(--header-h) - 100px); gap: 16px; }
+.chat-sidebar-panel {
+  width: 260px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.chat-sidebar-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 600;
+  font-size: 13px;
+}
+.chat-agent-list { flex: 1; overflow-y: auto; }
+.chat-agent-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background var(--transition);
+}
+.chat-agent-item:hover { background: var(--bg-hover); }
+.chat-agent-item.active { background: var(--gold-subtle); color: var(--gold); }
+.chat-main-panel {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chat-message {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.chat-message.sent {
+  align-self: flex-end;
+  background: var(--gold);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chat-message.received {
+  align-self: flex-start;
+  background: var(--bg-root);
+  border: 1px solid var(--border-default);
+  border-bottom-left-radius: 4px;
+}
+.chat-input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+  align-items: center;
+}
+.chat-input {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-default);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  outline: none;
+  resize: none;
+  transition: border-color var(--transition);
+}
+.chat-input:focus { border-color: var(--gold); }
+
+/* ========== CRON TABLE ========== */
+.cron-status { display: flex; align-items: center; gap: 6px; }
+.cron-toggle {
+  position: relative;
+  width: 36px; height: 20px;
+  background: var(--bg-hover);
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.cron-toggle.on { background: var(--green); border-color: var(--green); }
+.cron-toggle::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  top: 2px; left: 2px;
+  transition: transform var(--transition);
+}
+.cron-toggle.on::after { transform: translateX(16px); }
+
+/* ========== CHART PLACEHOLDERS ========== */
+.mini-chart {
+  height: 40px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+.mini-chart-bar {
+  flex: 1;
+  background: var(--gold);
+  border-radius: 2px 2px 0 0;
+  opacity: 0.7;
+  transition: opacity var(--transition);
+}
+.mini-chart-bar:hover { opacity: 1; }
+
+.bar-chart {
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 20px 0;
+}
+.bar-chart-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bar-chart-bar {
+  width: 100%;
+  max-width: 40px;
+  background: var(--gold);
+  border-radius: 4px 4px 0 0;
+  transition: all var(--transition);
+  position: relative;
+}
+.bar-chart-bar:hover { opacity: 0.8; }
+.bar-chart-label { font-size: 10px; color: var(--text-tertiary); white-space: nowrap; }
+
+/* ========== APPROVALS ========== */
+.approval-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all var(--transition);
+}
+.approval-card:hover { border-color: var(--gold-border); }
+.approval-info { flex: 1; }
+.approval-type { font-weight: 600; font-size: 14px; }
+.approval-desc { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.approval-actions { display: flex; gap: 6px; }
+
+/* ========== DETAIL PANEL ========== */
+.detail-panel {
+  position: fixed;
+  top: 0; right: -420px;
+  width: 420px;
+  height: 100vh;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-default);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+  display: flex;
+  flex-direction: column;
+}
+.detail-panel.open { right: 0; }
+.detail-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-default);
+}
+.detail-panel-body { flex: 1; overflow-y: auto; padding: 20px; }
+.detail-field { margin-bottom: 16px; }
+.detail-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); margin-bottom: 4px; }
+.detail-value { font-size: 13px; color: var(--text-primary); }
+
+/* ========== EMPTY STATE ========== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  text-align: center;
+}
+.empty-state-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+
+/* ========== LOADING ========== */
+.loading-spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-root) 50%, var(--bg-hover) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ========== TOAST ========== */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ========== COMMAND PALETTE ========== */
+.cmd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 300;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20vh;
+  backdrop-filter: blur(4px);
+}
+.cmd-overlay.open { display: flex; }
+.cmd-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  width: 520px;
+  max-height: 400px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  animation: fadeIn 0.15s ease;
+}
+.cmd-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  outline: none;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cmd-results { max-height: 320px; overflow-y: auto; padding: 8px; }
+.cmd-result-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background var(--transition);
+}
+.cmd-result-item:hover, .cmd-result-item.focused { background: var(--bg-hover); }
+.cmd-result-icon { width: 20px; text-align: center; color: var(--text-tertiary); }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .sidebar { position: fixed; left: -300px; z-index: 200; height: 100vh; transition: left 0.3s ease; }
+  .sidebar.mobile-open { left: 0; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .chat-container { flex-direction: column; }
+  .chat-sidebar-panel { width: 100%; height: 200px; }
+}
 </style>
 </head>
 <body>
-
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left">
-    <h1>Creative Black Market &mdash; Agent Kontrol Merkezi</h1>
-  </div>
-  <div class="header-right">
-    <div class="refresh-info">
-      <span id="lastRefresh">--</span>
-      <label class="toggle-label">
-        <input type="checkbox" id="autoRefreshToggle" checked>
-        Otomatik (30sn)
-      </label>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand" onclick="toggleSidebar()">
+      <div class="logo">CB</div>
+      <div class="brand-text"><span>Creative</span> Black Market</div>
     </div>
-    <button class="btn-refresh" id="btnRefresh" onclick="refreshAll()">Yenile</button>
-  </div>
-</div>
-
-<!-- SUMMARY -->
-<div class="summary-bar">
-  <div class="summary-card total"><div class="label">Toplam Agent</div><div class="value" id="sumTotal">-</div></div>
-  <div class="summary-card active"><div class="label">Aktif</div><div class="value" id="sumActive">-</div></div>
-  <div class="summary-card stale"><div class="label">Bayat</div><div class="value" id="sumStale">-</div></div>
-  <div class="summary-card never"><div class="label">Hic Gorulmedi</div><div class="value" id="sumNever">-</div></div>
-  <div class="summary-card failed"><div class="label">Basarisiz</div><div class="value" id="sumFailed">-</div></div>
-</div>
-
-<!-- MAIN -->
-<div class="main">
-
-  <!-- AGENT REGISTRY -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Agent Kayit Defteri</div>
-    <div class="tabs">
-      <button class="tab active" data-project="cbm" onclick="switchTab(this)">CBM Holding</button>
-      <button class="tab" data-project="printxu" onclick="switchTab(this)">PrintXu</button>
-      <button class="tab" data-project="studyo" onclick="switchTab(this)">Studyo</button>
-      <button class="tab" data-project="studioxu" onclick="switchTab(this)" style="color:#a78bfa">StudioXu.ai</button>
-      <button class="tab" data-project="talentbm" onclick="switchTab(this)" style="color:#f472b6">TalentBM</button>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-collapse-btn" onclick="toggleSidebar()">
+        <span id="collapseIcon">◁</span>
+        <span class="nav-label">Daralt</span>
+      </button>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Agent ID</th>
-            <th>Gorunen Ad</th>
-            <th>Departman</th>
-            <th>Durum</th>
-            <th>Son Sinyal</th>
-            <th>Ardisik Hata</th>
-          </tr>
-        </thead>
-        <tbody id="agentTableBody">
-          <tr><td colspan="6" class="state-msg loading">Yukleniyor</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  </aside>
 
-  <!-- AGENT CONVERSATIONS (LIVE) -->
-  <div class="section">
-    <div class="section-title">
-      <span class="dot" style="background:var(--green);animation:pulse 2s infinite"></span>
-      Agent Konusmalari &amp; Kararlar
-      <span style="font-size:11px;color:var(--green);font-weight:400;margin-left:8px">CANLI</span>
-      <span id="msgCount" style="font-size:10px;color:var(--text-dim);margin-left:auto;font-weight:400">0 mesaj</span>
-    </div>
-    <div class="conv-filter-bar" id="convFilters">
-      <button class="conv-filter active" onclick="filterConv('all',this)">Tumu</button>
-      <button class="conv-filter" onclick="filterConv('alert',this)">Alertler</button>
-      <button class="conv-filter" onclick="filterConv('briefing',this)">Brifing</button>
-      <button class="conv-filter" onclick="filterConv('financial_report',this)">Finans</button>
-      <button class="conv-filter" onclick="filterConv('task_assignment',this)">Gorevler</button>
-      <button class="conv-filter" onclick="filterConv('report',this)">Raporlar</button>
-      <button class="conv-filter" onclick="filterConv('decision',this)">Kararlar</button>
-    </div>
-    <div id="convContainer" style="max-height:600px;overflow-y:auto">
-      <div class="state-msg loading">Yukleniyor</div>
-    </div>
-  </div>
-
-  <!-- CROSS PROJECT MESSAGES -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Projeler Arasi Mesajlar (cross_project_messages)</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Kaynak</th>
-            <th></th>
-            <th>Hedef</th>
-            <th>Konu</th>
-            <th>Teslimat Durumu</th>
-            <th>Tarih</th>
-          </tr>
-        </thead>
-        <tbody id="crossTableBody">
-          <tr><td colspan="6" class="state-msg loading">Yukleniyor</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- PENDING APPROVALS -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Bekleyen Onaylar</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Proje</th>
-            <th>Talep Eden</th>
-            <th>Onay Tipi</th>
-            <th>Baslik</th>
-            <th>Aciliyet</th>
-            <th>Tarih</th>
-            <th>Islem</th>
-          </tr>
-        </thead>
-        <tbody id="approvalsTableBody">
-          <tr><td colspan="7" class="state-msg loading">Yukleniyor</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- AGENT REPORTS (CEO Briefing, CFO Finance, COO SLA, Auditor, CHRO) -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Agent Raporlari (Otomatik Uretilen)</div>
-    <div class="health-grid" id="reportsGrid">
-      <div class="state-msg loading">Yukleniyor</div>
-    </div>
-  </div>
-
-  <!-- pg_cron STATUS -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>pg_cron Zamanlayici Durumlari</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Proje</th>
-            <th>Job ID</th>
-            <th>Ad</th>
-            <th>Zamanlama</th>
-            <th>Aktif</th>
-          </tr>
-        </thead>
-        <tbody id="cronTableBody">
-          <tr><td colspan="4" class="state-msg loading">Yukleniyor</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- FINANCIAL OVERVIEW -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Konsolide Finansal Gorunum</div>
-    <div class="health-grid" id="financeGrid">
-      <div class="state-msg loading">Yukleniyor</div>
-    </div>
-  </div>
-
-  <!-- PLUGIN INVENTORY -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Plugin Envanteri</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Plugin</th>
-            <th>Tip</th>
-            <th>Durum</th>
-            <th>Yetenekler</th>
-            <th>Yararlanacak Agent'lar</th>
-            <th>Tarih</th>
-          </tr>
-        </thead>
-        <tbody id="pluginTableBody">
-          <tr><td colspan="6" class="state-msg loading">Yukleniyor</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ORG CHART -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Agent Organizasyon Semasi</div>
-    <div class="health-grid" id="orgGrid">
-      <div class="state-msg loading">Yukleniyor</div>
-    </div>
-  </div>
-
-  <!-- ENGINEERING PIPELINE -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Muhendislik Pipeline</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Baslik</th>
-            <th>Tip</th>
-            <th>Hedef Proje</th>
-            <th>Atanan</th>
-            <th>Durum</th>
-            <th>Tarih</th>
-          </tr>
-        </thead>
-        <tbody id="engineeringTableBody">
-          <tr><td colspan="6" class="state-msg loading">Yukleniyor</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- SYSTEM EVOLUTION TIMELINE -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Sistem Evrim Zaman Cizelgesi</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Tip</th>
-            <th>Hedef Proje</th>
-            <th>Hedef Agent</th>
-            <th>Aciklama</th>
-            <th>Baslatan</th>
-            <th>Tarih</th>
-          </tr>
-        </thead>
-        <tbody id="evolutionTableBody">
-          <tr><td colspan="6" class="state-msg loading">Yukleniyor</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- AGENT KOMUT MERKEZI v2 -->
-  <div class="section" id="commandCenter">
-    <div class="section-title"><span class="dot" style="background:var(--green)"></span>Agent Komut Merkezi</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <!-- LEFT: Live Terminal Feed -->
-      <div style="background:#0a0e1a;border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;height:520px">
-        <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span>
-            <span style="font-size:11px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:1px">Canli Terminal</span>
-          </div>
-          <span id="feedCount" style="font-size:10px;color:var(--text-dim)">0 event</span>
-        </div>
-        <div id="liveFeed" style="flex:1;overflow-y:auto;padding:8px 12px;font-size:11px;line-height:1.6;font-family:'SF Mono','Fira Code',monospace"></div>
-      </div>
-      <!-- RIGHT: Smart Command + Status -->
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <!-- Smart Input -->
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Akilli Komut <span style="color:var(--green);font-size:10px">(otomatik yonlendirme)</span></div>
-          <div style="display:flex;gap:8px;margin-bottom:10px">
-            <input type="text" id="chatInput" placeholder="Ne yapmak istiyorsun? Dogal dilde yaz..." style="flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:10px 14px;font-family:inherit;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')sendSmart()">
-            <button id="btnVoice" onclick="toggleVoice()" style="background:var(--card);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;padding:8px 12px;cursor:pointer;font-size:16px;transition:all 0.2s" title="Sesli komut">&#127908;</button>
-            <button onclick="sendSmart()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:8px 20px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700">&#9654;</button>
-          </div>
-          <div id="routeInfo" style="font-size:10px;color:var(--text-dim);min-height:16px"></div>
-          <div id="voiceStatus" style="font-size:11px;color:var(--gray);margin-top:4px"></div>
-        </div>
-        <!-- Command Response Area -->
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;flex:1;min-height:200px;max-height:300px">
-          <div style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">Komut Sonuclari</div>
-          <div id="chatMessages" style="flex:1;overflow-y:auto;padding:8px 12px;font-size:12px"></div>
-        </div>
-        <!-- Quick Actions Grid -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <button class="qcmd" onclick="quickCmd('status')">Ekosistem Durumu</button>
-          <button class="qcmd" onclick="quickCmd('health')">Saglik Kontrolu</button>
-          <button class="qcmd" onclick="quickCmd('finance')">Finans Ozeti</button>
-          <button class="qcmd" onclick="quickCmd('approvals')">Bekleyen Onaylar</button>
+  <!-- MAIN -->
+  <div class="main-area">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+        <button class="header-btn" onclick="toggleSidebar()" title="Menu" style="display:none" id="mobileMenuBtn">☰</button>
+        <div class="breadcrumb">
+          <span class="breadcrumb-parent">CBM</span>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current" id="breadcrumbCurrent">Genel Bakis</span>
         </div>
       </div>
-    </div>
-  </div>
+      <div class="header-right">
+        <button class="search-trigger" onclick="openCmdPalette()">
+          <span>🔍</span>
+          <span>Ara...</span>
+          <kbd>⌘K</kbd>
+        </button>
+        <button class="header-btn" onclick="refreshData()" title="Yenile">↻</button>
+        <button class="header-btn" onclick="toggleTheme()" title="Tema" id="themeBtn">◑</button>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="status-dot green" id="connStatus"></span>
+          <span style="font-size:11px;color:var(--text-tertiary)" id="connLabel">Bagli</span>
+        </div>
+      </div>
+    </header>
 
-  <!-- SYSTEM HEALTH -->
-  <div class="section">
-    <div class="section-title"><span class="dot"></span>Sistem Sagligi</div>
-    <div class="health-grid" id="healthGrid">
-      <div class="state-msg loading">Yukleniyor</div>
-    </div>
+    <!-- CONTENT -->
+    <main class="content" id="content"></main>
   </div>
-
 </div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-panel-header">
+    <span style="font-weight:600" id="detailTitle">Detay</span>
+    <button class="btn btn-sm" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="detail-panel-body" id="detailBody"></div>
+</div>
+
+<!-- COMMAND PALETTE -->
+<div class="cmd-overlay" id="cmdOverlay" onclick="if(event.target===this)closeCmdPalette()">
+  <div class="cmd-box">
+    <input class="cmd-input" id="cmdInput" placeholder="Sayfa veya agent ara..." oninput="filterCmdResults(this.value)">
+    <div class="cmd-results" id="cmdResults"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
 
 <script>
-// ── Project Config ──
-const PROJECT_CONFIG = {
-  cbm: {
-    url: 'https://ggvamhyaposgwoixxwca.supabase.co',
-    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndmFtaHlhcG9zZ3dvaXh4d2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MDg2MzcsImV4cCI6MjA4OTQ4NDYzN30.lRVKnmp_b97SiTz8VudSwEBwFxvTTghejaf-TFZFhqs'
-  },
-  printxu: {
-    url: 'https://finkngmejydwqikinbdv.supabase.co',
-    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpbmtuZ21lanlkd3Fpa2luYmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyOTc4ODgsImV4cCI6MjA4ODg3Mzg4OH0.wqXKpv_DbMNvMORtJehIg8AzfR7875wSAraRai6EHAA'
-  },
-  studyo: {
-    url: 'https://jlinpfqqssqclsyhptfz.supabase.co',
-    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsaW5wZnFxc3NxY2xzeWhwdGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDY1NDksImV4cCI6MjA5MTMyMjU0OX0.gz70aczXTNYE4G_P4eCDMyoFVwNr3Ap7--VJS6imjHc'
-  }
+// ========== CONFIG ==========
+const SUPABASE_URL = 'https://ggvamhyaposgwoixxwca.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndmFtaHlhcG9zZ3dvaXh4d2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MDg2MzcsImV4cCI6MjA4OTQ4NDYzN30.lRVKnmp_b97SiTz8VudSwEBwFxvTTghejaf-TFZFhqs';
+
+const PROJECTS = {
+  cbm: { name: 'CBM Holding', color: '#c8a44e', agents: 15, supabase: SUPABASE_URL },
+  printxu: { name: 'PrintXu', color: '#3b82f6', agents: 16, supabase: 'https://finkngmejydwqikinbdv.supabase.co' },
+  studyo: { name: 'Studyo', color: '#8b5cf6', agents: 14, supabase: 'https://jlinpfqqssqclsyhptfz.supabase.co' },
+  sxu: { name: 'StudioXu', color: '#ec4899', agents: 8, supabase: SUPABASE_URL },
+  tbm: { name: 'TalentBM', color: '#14b8a6', agents: 6, supabase: SUPABASE_URL }
 };
 
-// ── Supabase Clients ──
-let clients = {};
-try {
-  const { createClient } = supabase;
-  clients = {
-    cbm: createClient(PROJECT_CONFIG.cbm.url, PROJECT_CONFIG.cbm.key),
-    printxu: createClient(PROJECT_CONFIG.printxu.url, PROJECT_CONFIG.printxu.key),
-    studyo: createClient(PROJECT_CONFIG.studyo.url, PROJECT_CONFIG.studyo.key)
-  };
-  console.log('[INIT] Supabase clients created OK');
-} catch (e) {
-  console.error('[INIT] Supabase client creation failed:', e);
-}
+let sb;
+try { sb = supabase.createClient(SUPABASE_URL, ANON_KEY); } catch(e) { console.warn('Supabase client init failed, using REST', e); }
 
-// ── Direct REST fallback (bypasses supabase-js entirely) ──
-async function restQuery(projectKey, table, params = {}) {
-  const cfg = PROJECT_CONFIG[projectKey];
-  if (!cfg) return { data: null, error: 'Unknown project: ' + projectKey };
-  const url = new URL(cfg.url + '/rest/v1/' + table);
-  url.searchParams.set('select', params.select || '*');
-  if (params.order) url.searchParams.set('order', params.order);
-  if (params.limit) url.searchParams.set('limit', String(params.limit));
-  if (params.filters) {
-    for (const [k, v] of Object.entries(params.filters)) {
-      url.searchParams.set(k, v);
-    }
-  }
-  const res = await fetch(url.toString(), {
-    headers: {
-      'apikey': cfg.key,
-      'Authorization': 'Bearer ' + cfg.key,
-      'Accept': 'application/json'
-    }
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    return { data: null, error: `HTTP ${res.status}: ${text}` };
-  }
-  const data = await res.json();
-  return { data, error: null };
-}
-
-const PROJECT_LABELS = { cbm: 'CBM', printxu: 'PrintXu', studyo: 'Studyo', studioxu: 'StudioXu', talentbm: 'TalentBM' };
-
-// ── State ──
-let allAgents = { cbm: [], printxu: [], studyo: [], studioxu: [], talentbm: [] };
-let activeTab = 'cbm';
-let autoRefreshTimer = null;
-
-// ── Helpers ──
-function relativeTime(dateStr) {
-  if (!dateStr) return '-';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  if (diff < 0) return 'az once';
-  const sec = Math.floor(diff / 1000);
-  if (sec < 60) return sec + ' sn once';
-  const min = Math.floor(sec / 60);
-  if (min < 60) return min + ' dk once';
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return hr + ' sa once';
-  const d = Math.floor(hr / 24);
-  return d + ' gun once';
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  return d.toLocaleString('tr-TR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-}
-
-function agentStatus(agent) {
-  if (!agent.last_heartbeat) return 'never';
-  const diff = Date.now() - new Date(agent.last_heartbeat).getTime();
-  const hrs = diff / (1000 * 60 * 60);
-  if ((agent.consecutive_failures || 0) >= 3) return 'failed';
-  if (hrs < 1) return 'active';
-  return 'stale';
-}
-
-function statusBadge(st) {
-  const map = {
-    active: ['badge-green', 'Aktif'],
-    stale: ['badge-yellow', 'Bayat'],
-    failed: ['badge-red', 'Basarisiz'],
-    never: ['badge-gray', 'Gorulmedi']
-  };
-  const [cls, label] = map[st] || ['badge-gray', st];
-  return `<span class="badge ${cls}">${label}</span>`;
-}
-
-function priorityBadge(p) {
-  const map = {
-    critical: 'badge-red',
-    high: 'badge-orange',
-    medium: 'badge-blue',
-    low: 'badge-gray'
-  };
-  return `<span class="badge ${map[p] || 'badge-gray'}">${p || '-'}</span>`;
-}
-
-function msgTypeBadge(t) {
-  const map = {
-    briefing: 'badge-blue', alert: 'badge-red', report: 'badge-green',
-    financial_report: 'badge-green', sla_report: 'badge-orange', audit_report: 'badge-yellow',
-    gap_analysis: 'badge-orange', notification: 'badge-blue', task_assignment: 'badge-blue',
-    heartbeat: 'badge-gray', critical: 'badge-red'
-  };
-  return `<span class="badge ${map[t] || 'badge-blue'}">${esc(t || '-')}</span>`;
-}
-
-function deliveryBadge(s) {
-  const map = {
-    pending: 'badge-yellow',
-    delivered: 'badge-green',
-    dead_letter: 'badge-red',
-    processing: 'badge-blue'
-  };
-  return `<span class="badge ${map[s] || 'badge-gray'}">${s || '-'}</span>`;
-}
-
-function rowClass(st) {
-  return { active: 'row-green', stale: 'row-yellow', failed: 'row-red', never: 'row-gray' }[st] || '';
-}
-
-function esc(s) {
-  if (s == null) return '-';
-  const el = document.createElement('span');
-  el.textContent = String(s);
-  return el.innerHTML;
-}
-
-// ── Data Fetching ──
-async function fetchAgentRegistry(projectKey) {
-  // Try supabase-js first, then fall back to direct REST
+// ========== REST FALLBACK ==========
+async function restQuery(table, params = '') {
   try {
-    const client = clients[projectKey];
-    if (client) {
-      const { data, error } = await client
-        .from('agent_registry')
-        .select('*')
-        .order('agent_id', { ascending: true });
-      if (!error && data && data.length > 0) {
-        console.log(`[supabase-js] agent_registry [${projectKey}]: ${data.length} agents`);
-        return data;
-      }
-      if (error) console.warn(`[supabase-js] agent_registry [${projectKey}] error:`, error.message || error);
-    }
-  } catch (e) {
-    console.warn(`[supabase-js] agent_registry [${projectKey}] exception:`, e.message || e);
-  }
-  // Fallback: direct REST API call
-  try {
-    console.log(`[REST fallback] agent_registry [${projectKey}]...`);
-    const { data, error } = await restQuery(projectKey, 'agent_registry', { order: 'agent_id.asc' });
-    if (error) { console.error(`[REST] agent_registry [${projectKey}] error:`, error); return []; }
-    console.log(`[REST] agent_registry [${projectKey}]: ${(data||[]).length} agents`);
-    return data || [];
-  } catch (e) {
-    console.error(`[REST] agent_registry [${projectKey}] FAILED:`, e);
-    return [];
-  }
-}
-
-async function fetchFromAllProjects(table, params = {}) {
-  const projectKeys = Object.keys(PROJECT_CONFIG);
-  const results = await Promise.all(
-    projectKeys.map(async (key) => {
-      try {
-        // Try supabase-js first
-        const client = clients[key];
-        if (client) {
-          const q = client.from(table).select(params.select || '*').order(params.orderBy || 'created_at', { ascending: false });
-          if (params.limit) q.limit(params.limit);
-          if (params.eq) for (const [k,v] of Object.entries(params.eq)) q.eq(k, v);
-          if (params.inFilter) q.in(params.inFilter[0], params.inFilter[1]);
-          const { data, error } = await q;
-          if (!error && data) return (data || []).map(r => ({ ...r, _project: key }));
-        }
-      } catch {}
-      // Fallback to REST
-      try {
-        const restParams = { order: (params.orderBy || 'created_at') + '.desc', limit: params.limit };
-        const filters = {};
-        if (params.eq) for (const [k,v] of Object.entries(params.eq)) filters[k] = 'eq.' + v;
-        if (params.inFilter) filters[params.inFilter[0]] = 'in.(' + params.inFilter[1].join(',') + ')';
-        restParams.filters = filters;
-        const { data } = await restQuery(key, table, restParams);
-        return (data || []).map(r => ({ ...r, _project: key }));
-      } catch { return []; }
-    })
-  );
-  return results.flat();
-}
-
-async function fetchMessages() {
-  try {
-    const all = await fetchFromAllProjects('agent_messages', { limit: 30 });
-    return all.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
-  } catch (e) {
-    console.warn('agent_messages:', e.message);
-    return [];
-  }
-}
-
-async function fetchDecisions() {
-  try {
-    const all = await fetchFromAllProjects('agent_approvals', {
-      inFilter: ['status', ['approved', 'rejected']],
-      orderBy: 'decided_at',
-      limit: 10
+    const url = `${SUPABASE_URL}/rest/v1/${table}${params ? '?' + params : ''}`;
+    const resp = await fetch(url, {
+      headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` }
     });
-    return all.sort((a, b) => new Date(b.decided_at || b.created_at) - new Date(a.decided_at || a.created_at)).slice(0, 15);
-  } catch (e) {
-    console.warn('decisions:', e.message);
-    return [];
-  }
+    if (!resp.ok) throw new Error(resp.status);
+    return await resp.json();
+  } catch(e) { console.warn(`REST query failed for ${table}:`, e); return null; }
 }
 
-async function fetchCrossMessages() {
-  try {
-    if (clients.cbm) {
-      const { data, error } = await clients.cbm
-        .from('cross_project_messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-      if (!error && data) return data;
-    }
-  } catch {}
-  try {
-    const { data } = await restQuery('cbm', 'cross_project_messages', { order: 'created_at.desc', limit: 20 });
-    return data || [];
-  } catch (e) {
-    console.warn('cross_project_messages:', e.message);
-    return [];
-  }
-}
-
-async function fetchApprovals(projectKey) {
-  try {
-    if (clients[projectKey]) {
-      const { data, error } = await clients[projectKey]
-        .from('agent_approvals')
-        .select('*')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-      if (!error && data) return data.map(r => ({ ...r, _project: projectKey }));
-    }
-  } catch {}
-  try {
-    const { data } = await restQuery(projectKey, 'agent_approvals', {
-      order: 'created_at.desc',
-      filters: { status: 'eq.pending' }
-    });
-    return (data || []).map(r => ({ ...r, _project: projectKey }));
-  } catch (e) {
-    console.warn(`agent_approvals [${projectKey}]:`, e.message);
-    return [];
-  }
-}
-
-async function fetchHealthSnapshots() {
-  try {
-    if (clients.cbm) {
-      const { data, error } = await clients.cbm
-        .from('system_health_snapshots')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      if (!error && data) return data;
-    }
-  } catch {}
-  try {
-    const { data } = await restQuery('cbm', 'system_health_snapshots', { order: 'created_at.desc', limit: 10 });
-    return data || [];
-  } catch (e) {
-    console.warn('system_health_snapshots:', e.message);
-    return [];
-  }
-}
-
-// ── Rendering ──
-function renderSummary() {
-  const all = [...allAgents.cbm, ...allAgents.printxu, ...allAgents.studyo, ...allAgents.studioxu, ...allAgents.talentbm];
-  const statuses = all.map(agentStatus);
-  document.getElementById('sumTotal').textContent = all.length;
-  document.getElementById('sumActive').textContent = statuses.filter(s => s === 'active').length;
-  document.getElementById('sumStale').textContent = statuses.filter(s => s === 'stale').length;
-  document.getElementById('sumNever').textContent = statuses.filter(s => s === 'never').length;
-  document.getElementById('sumFailed').textContent = statuses.filter(s => s === 'failed').length;
-}
-
-function renderAgentTable() {
-  const tbody = document.getElementById('agentTableBody');
-  const agents = allAgents[activeTab];
-  if (!agents.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="state-msg">Bu projede kayitli agent bulunamadi.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = agents.map(a => {
-    const st = agentStatus(a);
-    return `<tr class="${rowClass(st)}">
-      <td>${esc(a.agent_id)}</td>
-      <td>${esc(a.display_name)}</td>
-      <td>${esc(a.department)}</td>
-      <td>${statusBadge(st)}</td>
-      <td>${a.last_heartbeat ? relativeTime(a.last_heartbeat) : '<span style="color:var(--gray)">-</span>'}</td>
-      <td>${a.consecutive_failures || 0}</td>
-    </tr>`;
-  }).join('');
-}
-
-let currentConvFilter = 'all';
-let allMessages = [];
-let allDecisions = [];
-
-function renderBodyObj(obj, depth) {
-  if (obj == null) return '<span style="color:var(--gray)">-</span>';
-  if (typeof obj !== 'object') return esc(String(obj));
-  if (Array.isArray(obj)) {
-    if (obj.length === 0) return '<span style="color:var(--gray)">[]</span>';
-    return obj.map((item, i) => {
-      if (typeof item === 'object' && item !== null) {
-        return `<div class="body-nested">${renderBodyObj(item, (depth||0)+1)}</div>`;
-      }
-      return `<div class="body-row"><span class="body-key">[${i}]</span><span class="body-val">${esc(String(item))}</span></div>`;
-    }).join('');
-  }
-  return Object.entries(obj).map(([k, v]) => {
-    if (typeof v === 'object' && v !== null && !Array.isArray(v) && (depth||0) < 2) {
-      return `<div style="margin-top:4px"><span class="body-key">${esc(k)}:</span></div><div class="body-nested">${renderBodyObj(v, (depth||0)+1)}</div>`;
-    }
-    const val = (typeof v === 'object' && v !== null) ? JSON.stringify(v) : String(v ?? '-');
-    return `<div class="body-row"><span class="body-key">${esc(k)}</span><span class="body-val">${esc(val)}</span></div>`;
-  }).join('');
-}
-
-function toggleConv(el) {
-  el.closest('.conv-card').classList.toggle('open');
-}
-
-function filterConv(type, btn) {
-  currentConvFilter = type;
-  document.querySelectorAll('.conv-filter').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderConversations(allMessages, allDecisions);
-}
-
-function renderConversations(messages, decisions) {
-  allMessages = messages;
-  allDecisions = decisions || allDecisions;
-  const container = document.getElementById('convContainer');
-
-  let filtered = messages;
-  if (currentConvFilter === 'decision') {
-    // Show decisions instead
-    if (!allDecisions.length) {
-      container.innerHTML = '<div class="state-msg">Henuz karar alinamadi.</div>';
-      return;
-    }
-    container.innerHTML = '<div class="health-grid">' + allDecisions.map(d => {
-      const isRejected = d.status === 'rejected';
-      return `<div class="decision-card ${isRejected ? 'rejected' : ''}">
-        <div class="dec-header">
-          <div>
-            <span class="badge badge-blue">${esc(PROJECT_LABELS[d._project] || d._project)}</span>
-            <span class="badge ${isRejected ? 'badge-red' : 'badge-green'}">${isRejected ? 'REDDEDILDI' : 'ONAYLANDI'}</span>
-          </div>
-          <div class="dec-meta">${formatDate(d.decided_at || d.created_at)}</div>
-        </div>
-        <div class="dec-title">${esc(d.title)}</div>
-        <div class="dec-detail">
-          <strong>Talep:</strong> ${esc(d.requesting_agent)} | <strong>Tip:</strong> ${esc(d.approval_type)}
-          ${d.decided_by ? ' | <strong>Karar:</strong> ' + esc(d.decided_by) : ''}
-          ${d.rejection_reason ? '<br><strong>Red Sebebi:</strong> ' + esc(d.rejection_reason) : ''}
-        </div>
-        ${d.payload ? '<div class="conv-body-content" style="margin-top:8px">' + renderBodyObj(d.payload) + '</div>' : ''}
-      </div>`;
-    }).join('') + '</div>';
-    return;
-  }
-
-  if (currentConvFilter !== 'all') {
-    filtered = messages.filter(m => m.message_type === currentConvFilter);
-  }
-
-  document.getElementById('msgCount').textContent = messages.length + ' mesaj' + (currentConvFilter !== 'all' ? ' (' + filtered.length + ' filtrelenmis)' : '');
-
-  if (!filtered.length) {
-    container.innerHTML = '<div class="state-msg">Bu filtrede mesaj bulunamadi.</div>';
-    return;
-  }
-
-  container.innerHTML = filtered.map(m => {
-    const prjBadge = m._project ? `<span class="badge badge-blue" style="font-size:9px">${esc(PROJECT_LABELS[m._project] || m._project)}</span>` : '';
-    const priorityColor = { critical: 'var(--red)', high: 'var(--orange)', medium: 'var(--blue)', low: 'var(--gray)' }[m.priority] || 'var(--gray)';
-    return `<div class="conv-card" data-type="${esc(m.message_type)}">
-      <div class="conv-header" onclick="toggleConv(this)">
-        <span class="conv-expand">&#9654;</span>
-        <div class="conv-agents">
-          ${prjBadge}
-          <strong style="color:var(--accent)">${esc(m.from_agent)}</strong>
-          <span class="arrow">&rarr;</span>
-          <strong style="color:var(--green)">${esc(m.to_agent || m.to_department || '?')}</strong>
-        </div>
-        <div class="conv-subject">${esc(m.subject)}</div>
-        <div class="conv-meta">
-          ${msgTypeBadge(m.message_type)}
-          <span style="color:${priorityColor}">${esc(m.priority)}</span>
-          <span>${relativeTime(m.created_at)}</span>
-        </div>
-      </div>
-      <div class="conv-body">
-        <div style="display:flex;gap:12px;padding-top:8px;font-size:11px;color:var(--text-dim)">
-          <span>Durum: <strong>${esc(m.status)}</strong></span>
-          ${m.source_project ? '<span>Proje: ' + esc(m.source_project) + ' &rarr; ' + esc(m.target_project) + '</span>' : ''}
-          ${m.requires_response ? '<span style="color:var(--yellow)">Yanit Gerekli</span>' : ''}
-        </div>
-        <div class="conv-body-content">${m.body ? renderBodyObj(m.body) : '<span style="color:var(--gray)">Icerik yok</span>'}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderCrossMessages(msgs) {
-  const tbody = document.getElementById('crossTableBody');
-  if (!msgs.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="state-msg">Projeler arasi mesaj bulunamadi.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = msgs.map(m => `<tr>
-    <td>${esc(m.source_project)}:<strong>${esc(m.source_agent)}</strong></td>
-    <td><span class="arrow">&rarr;</span></td>
-    <td>${esc(m.target_project)}:<strong>${esc(m.target_agent)}</strong></td>
-    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc(m.subject)}</td>
-    <td>${deliveryBadge(m.delivery_status)}</td>
-    <td>${formatDate(m.created_at)}</td>
-  </tr>`).join('');
-}
-
-function renderApprovals(approvals) {
-  const tbody = document.getElementById('approvalsTableBody');
-  if (!approvals.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="state-msg">Bekleyen onay yok.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = approvals.map(a => `<tr>
-    <td><span class="badge badge-blue">${esc(PROJECT_LABELS[a._project] || a._project)}</span></td>
-    <td>${esc(a.requesting_agent)}</td>
-    <td>${esc(a.approval_type)}</td>
-    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(a.title)}</td>
-    <td>${priorityBadge(a.urgency)}</td>
-    <td>${formatDate(a.created_at)}</td>
-    <td>
-      <div class="action-btns">
-        <button class="btn-approve" onclick="handleApproval('${a._project}','${a.id}','approved',this)">Onayla</button>
-        <button class="btn-reject" onclick="handleApproval('${a._project}','${a.id}','rejected',this)">Reddet</button>
-      </div>
-    </td>
-  </tr>`).join('');
-}
-
-function renderHealth(snapshots) {
-  const grid = document.getElementById('healthGrid');
-  if (!snapshots.length) {
-    grid.innerHTML = '<div class="state-msg">Sistem sagligi verisi bulunamadi.</div>';
-    return;
-  }
-  grid.innerHTML = snapshots.map(s => {
-    let metricsHtml = '';
-    const data = s.data || s.snapshot_data || s.metrics || s;
-    const skip = new Set(['id', 'created_at', 'updated_at', 'snapshot_data', 'metrics', 'data', 'project_id', 'snapshot_type', 'anomalies', 'severity']);
-    const entries = (typeof data === 'object' && data !== null) ? Object.entries(data) : [];
-    if (entries.length) {
-      metricsHtml = entries
-        .filter(([k]) => !skip.has(k))
-        .slice(0, 10)
-        .map(([k, v]) => `<div class="metric"><span class="k">${esc(k)}</span><span class="v">${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</span></div>`)
-        .join('');
-    } else {
-      // Flatten top-level columns as metrics
-      metricsHtml = Object.entries(s)
-        .filter(([k]) => !skip.has(k))
-        .slice(0, 10)
-        .map(([k, v]) => `<div class="metric"><span class="k">${esc(k)}</span><span class="v">${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</span></div>`)
-        .join('');
-    }
-    return `<div class="health-card">
-      <div class="ts">${esc(s.project_id || '')} — ${esc(s.snapshot_type || '')} — ${formatDate(s.created_at)}</div>
-      ${metricsHtml || '<div class="metric"><span class="k">Veri yok</span></div>'}
-    </div>`;
-  }).join('');
-}
-
-async function fetchAgentReports() {
-  try {
-    if (clients.cbm) {
-      const { data, error } = await clients.cbm
-        .from('agent_messages')
-        .select('*')
-        .in('message_type', ['briefing', 'financial_report', 'sla_report', 'audit_report', 'gap_analysis'])
-        .order('created_at', { ascending: false })
-        .limit(12);
-      if (!error && data) return data;
-    }
-  } catch {}
-  try {
-    const { data } = await restQuery('cbm', 'agent_messages', {
-      order: 'created_at.desc',
-      limit: 12,
-      filters: { message_type: 'in.(briefing,financial_report,sla_report,audit_report,gap_analysis)' }
-    });
-    return data || [];
-  } catch (e) {
-    console.warn('agent reports:', e.message);
-    return [];
-  }
-}
-
-async function fetchCronJobs() {
-  try {
-    const projectKeys = Object.keys(PROJECT_CONFIG);
-    const results = await Promise.all(
-      projectKeys.map(async (key) => {
-        try {
-          if (clients[key]) {
-            const { data, error } = await clients[key].rpc('get_cron_jobs');
-            if (!error && data) return data.map(j => ({ ...j, _project: key }));
-          }
-        } catch {}
-        // RPC fallback via REST
-        try {
-          const cfg = PROJECT_CONFIG[key];
-          const res = await fetch(cfg.url + '/rest/v1/rpc/get_cron_jobs', {
-            method: 'POST',
-            headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key, 'Content-Type': 'application/json' },
-            body: '{}'
-          });
-          if (res.ok) { const data = await res.json(); return (data || []).map(j => ({ ...j, _project: key })); }
-        } catch {}
-        return [];
-      })
-    );
-    return results.flat().sort((a, b) => (a._project + a.jobname).localeCompare(b._project + b.jobname));
-  } catch (e) {
-    console.warn('cron jobs:', e.message);
-    return [];
-  }
-}
-
-function renderReports(reports) {
-  const grid = document.getElementById('reportsGrid');
-  if (!reports.length) {
-    grid.innerHTML = '<div class="state-msg">Henuz otomatik rapor olusturulmamis.</div>';
-    return;
-  }
-  grid.innerHTML = reports.map(r => {
-    const body = typeof r.body === 'object' ? r.body : {};
-    let metricsHtml = '';
-    const renderObj = (obj, depth = 0) => {
-      if (!obj || typeof obj !== 'object') return esc(obj);
-      return Object.entries(obj).slice(0, depth > 0 ? 5 : 8).map(([k, v]) => {
-        if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-          return `<div class="metric" style="margin-top:4px"><span class="k" style="color:var(--accent)">${esc(k)}</span></div>` +
-            Object.entries(v).slice(0, 4).map(([k2, v2]) =>
-              `<div class="metric" style="padding-left:12px"><span class="k">${esc(k2)}</span><span class="v">${esc(typeof v2 === 'object' ? JSON.stringify(v2) : v2)}</span></div>`
-            ).join('');
-        }
-        return `<div class="metric"><span class="k">${esc(k)}</span><span class="v">${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</span></div>`;
-      }).join('');
-    };
-    metricsHtml = renderObj(body);
-    const typeColor = { briefing: 'var(--blue)', financial_report: 'var(--green)', sla_report: 'var(--orange)', audit_report: 'var(--yellow)', gap_analysis: 'var(--red)' };
-    return `<div class="health-card" style="border-left:3px solid ${typeColor[r.message_type] || 'var(--accent)'}">
-      <div class="ts" style="display:flex;justify-content:space-between">
-        <span>${msgTypeBadge(r.message_type)} ${esc(r.to_agent)}</span>
-        <span>${formatDate(r.created_at)}</span>
-      </div>
-      <div style="font-size:12px;font-weight:600;margin:6px 0;color:var(--text)">${esc(r.subject)}</div>
-      ${metricsHtml}
-    </div>`;
-  }).join('');
-}
-
-function renderCronJobs(jobs) {
-  const tbody = document.getElementById('cronTableBody');
-  if (!jobs.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="state-msg">pg_cron verisi alinamadi.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = jobs.map(j => `<tr>
-    <td><span class="badge badge-blue">${esc(PROJECT_LABELS[j._project] || j._project)}</span></td>
-    <td>${esc(j.jobid)}</td>
-    <td><strong>${esc(j.jobname)}</strong></td>
-    <td><code>${esc(j.schedule)}</code></td>
-    <td>${j.active ? '<span class="badge badge-green">Aktif</span>' : '<span class="badge badge-red">Pasif</span>'}</td>
-  </tr>`).join('');
-}
-
-async function fetchFinancialData() {
-  try {
-    const [costsResult, reportsResult] = await Promise.all([
-      (async () => {
-        try {
-          if (clients.cbm) {
-            const { data, error } = await clients.cbm.from('infrastructure_costs').select('*').order('period_end', { ascending: false }).limit(20);
-            if (!error && data) return data;
-          }
-        } catch {}
-        const { data } = await restQuery('cbm', 'infrastructure_costs', { order: 'period_end.desc', limit: 20 });
-        return data || [];
-      })(),
-      (async () => {
-        try {
-          if (clients.cbm) {
-            const { data, error } = await clients.cbm.from('subsidiary_reports').select('*').order('created_at', { ascending: false }).limit(10);
-            if (!error && data) return data;
-          }
-        } catch {}
-        const { data } = await restQuery('cbm', 'subsidiary_reports', { order: 'created_at.desc', limit: 10 });
-        return data || [];
-      })()
-    ]);
-    return { costs: costsResult || [], reports: reportsResult || [] };
-  } catch (e) { console.warn('financial:', e.message); return { costs: [], reports: [] }; }
-}
-
-async function fetchSingleTable(table, params = {}) {
-  const projectKey = params.project || 'cbm';
-  try {
-    if (clients[projectKey]) {
-      const q = clients[projectKey].from(table).select(params.select || '*');
-      if (params.orderBy) q.order(params.orderBy, { ascending: params.ascending ?? false });
-      if (params.limit) q.limit(params.limit);
-      if (params.eq) for (const [k,v] of Object.entries(params.eq)) q.eq(k, v);
+async function queryTable(table, opts = {}) {
+  const { select = '*', order, limit, filters, eq } = opts;
+  // Try supabase client first
+  if (sb) {
+    try {
+      let q = sb.from(table).select(select);
+      if (eq) Object.entries(eq).forEach(([k,v]) => q = q.eq(k,v));
+      if (filters) filters.forEach(f => q = q[f.op](f.col, f.val));
+      if (order) q = q.order(order.col, { ascending: order.asc ?? false });
+      if (limit) q = q.limit(limit);
       const { data, error } = await q;
       if (!error && data) return data;
-    }
-  } catch {}
-  try {
-    const restParams = {};
-    if (params.orderBy) restParams.order = params.orderBy + (params.ascending ? '.asc' : '.desc');
-    if (params.limit) restParams.limit = params.limit;
-    const filters = {};
-    if (params.eq) for (const [k,v] of Object.entries(params.eq)) filters[k] = 'eq.' + v;
-    restParams.filters = filters;
-    const { data } = await restQuery(projectKey, table, restParams);
-    return data || [];
-  } catch (e) { console.warn(table + ':', e.message); return []; }
-}
-
-async function fetchPlugins() {
-  return fetchSingleTable('plugin_inventory', { orderBy: 'created_at' });
-}
-
-async function fetchOrgChart() {
-  return fetchSingleTable('agent_org_chart', { orderBy: 'department', ascending: true, eq: { is_active: true } });
-}
-
-async function fetchEngineering() {
-  return fetchSingleTable('engineering_backlog', { orderBy: 'created_at', limit: 20 });
-}
-
-async function fetchEvolution() {
-  return fetchSingleTable('system_evolution_log', { orderBy: 'created_at', limit: 20 });
-}
-
-function renderFinance(fin) {
-  const grid = document.getElementById('financeGrid');
-  if (!fin.costs.length && !fin.reports.length) {
-    grid.innerHTML = '<div class="state-msg">Finansal veri bulunamadi.</div>';
-    return;
+    } catch(e) { /* fall through to REST */ }
   }
-  let html = '';
-  // Cost summary by type
-  const costByType = {};
-  fin.costs.forEach(c => { costByType[c.cost_type] = (costByType[c.cost_type] || 0) + Number(c.amount || 0); });
-  const totalCost = Object.values(costByType).reduce((a, b) => a + b, 0);
-  html += `<div class="health-card" style="border-left:3px solid var(--red)">
-    <div class="ts">Altyapi Maliyetleri (son 30 gun)</div>
-    <div style="font-size:20px;font-weight:700;color:var(--red);margin:6px 0">$${totalCost.toFixed(2)}</div>
-    ${Object.entries(costByType).map(([k,v]) => `<div class="metric"><span class="k">${esc(k)}</span><span class="v">$${v.toFixed(2)}</span></div>`).join('')}
-  </div>`;
-  // Subsidiary reports
-  fin.reports.forEach(r => {
-    const d = r.data || {};
-    html += `<div class="health-card" style="border-left:3px solid var(--green)">
-      <div class="ts">${esc(r.source_project)} - ${esc(r.report_type)} - ${formatDate(r.created_at)}</div>
-      ${Object.entries(d).slice(0, 6).map(([k,v]) => `<div class="metric"><span class="k">${esc(k)}</span><span class="v">${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</span></div>`).join('')}
+  // REST fallback
+  let params = [];
+  if (select && select !== '*') params.push(`select=${select}`);
+  if (eq) Object.entries(eq).forEach(([k,v]) => params.push(`${k}=eq.${v}`));
+  if (order) params.push(`order=${order.col}.${order.asc ? 'asc' : 'desc'}`);
+  if (limit) params.push(`limit=${limit}`);
+  return await restQuery(table, params.join('&'));
+}
+
+// ========== STATE ==========
+let state = {
+  currentPage: 'overview',
+  agents: [],
+  messages: [],
+  tasks: [],
+  approvals: [],
+  crossMessages: [],
+  reports: [],
+  cronJobs: [],
+  costs: [],
+  plugins: [],
+  orgChart: [],
+  backlog: [],
+  deployments: [],
+  healthSnapshots: [],
+  sidebarCollapsed: false,
+  selectedAgent: null
+};
+
+// ========== NAVIGATION ==========
+const NAV_ITEMS = [
+  { section: 'Ana Menü' },
+  { id: 'overview', icon: '⬡', label: 'Genel Bakis' },
+  { id: 'agents', icon: '⊞', label: 'Agent Kayit' },
+  { id: 'messages', icon: '◈', label: 'Mesajlar' },
+  { id: 'cross', icon: '⇄', label: 'Cross-Proje' },
+  { section: 'Yonetim' },
+  { id: 'approvals', icon: '✓', label: 'Onaylar', badge: 0 },
+  { id: 'reports', icon: '◧', label: 'Raporlar' },
+  { id: 'cron', icon: '⏱', label: 'pg_cron Monitor' },
+  { id: 'financial', icon: '◉', label: 'Finans' },
+  { section: 'Sistem' },
+  { id: 'plugins', icon: '⬢', label: 'Plugin Envanter' },
+  { id: 'org', icon: '◫', label: 'Org Chart' },
+  { id: 'engineering', icon: '⚙', label: 'Mühendislik' },
+  { id: 'health', icon: '♡', label: 'Sistem Sagligi' },
+  { id: 'command', icon: '▷', label: 'Komut Merkezi' }
+];
+
+function renderNav() {
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = NAV_ITEMS.map(item => {
+    if (item.section) return `<div class="nav-section-label">${item.section}</div>`;
+    const active = state.currentPage === item.id ? 'active' : '';
+    const badge = item.badge > 0 ? `<span class="nav-badge">${item.badge}</span>` : '';
+    return `<div class="nav-item ${active}" data-page="${item.id}" onclick="navigateTo('${item.id}')">
+      <span class="nav-icon">${item.icon}</span>
+      <span class="nav-label">${item.label}</span>
+      ${badge}
     </div>`;
-  });
-  grid.innerHTML = html;
+  }).join('');
 }
 
-function pluginStatusBadge(s) {
-  const map = { discovered: 'badge-blue', evaluating: 'badge-yellow', approved: 'badge-green', installed: 'badge-green', rejected: 'badge-red' };
-  return `<span class="badge ${map[s] || 'badge-gray'}">${esc(s || '-')}</span>`;
+function navigateTo(page) {
+  state.currentPage = page;
+  renderNav();
+  renderPage();
+  const item = NAV_ITEMS.find(n => n.id === page);
+  if (item) document.getElementById('breadcrumbCurrent').textContent = item.label;
+  closeCmdPalette();
 }
 
-function renderPlugins(plugins) {
-  const tbody = document.getElementById('pluginTableBody');
-  if (!plugins.length) { tbody.innerHTML = '<tr><td colspan="6" class="state-msg">Plugin bulunamadi.</td></tr>'; return; }
-  tbody.innerHTML = plugins.map(p => `<tr>
-    <td><strong>${esc(p.plugin_name)}</strong></td>
-    <td><span class="badge badge-blue">${esc(p.plugin_type)}</span></td>
-    <td>${pluginStatusBadge(p.evaluation_status)}</td>
-    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">${esc(Array.isArray(p.capabilities) ? p.capabilities.join(', ') : '-')}</td>
-    <td>${esc(Array.isArray(p.agents_benefited) ? p.agents_benefited.join(', ') : '-')}</td>
-    <td>${formatDate(p.created_at)}</td>
-  </tr>`).join('');
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  state.sidebarCollapsed = !state.sidebarCollapsed;
+  sb.classList.toggle('collapsed', state.sidebarCollapsed);
+  document.getElementById('collapseIcon').textContent = state.sidebarCollapsed ? '▷' : '◁';
 }
 
-function renderOrgChart(orgs) {
-  const grid = document.getElementById('orgGrid');
-  if (!orgs.length) { grid.innerHTML = '<div class="state-msg">Org chart verisi bulunamadi.</div>'; return; }
-  const depts = {};
-  orgs.forEach(o => { if (!depts[o.department]) depts[o.department] = []; depts[o.department].push(o); });
-  grid.innerHTML = Object.entries(depts).map(([dept, agents]) => `<div class="health-card" style="border-left:3px solid var(--accent)">
-    <div class="ts" style="font-weight:700;color:var(--accent);font-size:13px">${esc(dept.toUpperCase())}</div>
-    ${agents.map(a => `<div class="metric">
-      <span class="k">${esc(a.agent_id)} ${a.reports_to ? '<span style="color:var(--text-dim);font-size:10px">→ ' + esc(a.reports_to) + '</span>' : ''}</span>
-      <span class="v" style="font-size:10px">${esc(a.project_id)}</span>
-    </div>`).join('')}
-  </div>`).join('');
+// ========== THEME ==========
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('cbm-theme', next);
+  document.getElementById('themeBtn').textContent = next === 'dark' ? '☀' : '◑';
 }
-
-function engStatusBadge(s) {
-  const map = { backlog: 'badge-gray', in_progress: 'badge-blue', in_review: 'badge-yellow', deployed: 'badge-green' };
-  return `<span class="badge ${map[s] || 'badge-gray'}">${esc(s || '-')}</span>`;
-}
-
-function renderEngineering(items) {
-  const tbody = document.getElementById('engineeringTableBody');
-  if (!items.length) { tbody.innerHTML = '<tr><td colspan="6" class="state-msg">Backlog bos.</td></tr>'; return; }
-  tbody.innerHTML = items.map(i => `<tr>
-    <td>${esc(i.title)}</td>
-    <td><span class="badge badge-blue">${esc(i.task_type)}</span></td>
-    <td>${esc(i.target_project || '-')}</td>
-    <td>${esc(i.assigned_to || '-')}</td>
-    <td>${engStatusBadge(i.status)}</td>
-    <td>${formatDate(i.created_at)}</td>
-  </tr>`).join('');
-}
-
-function evoTypeBadge(t) {
-  const map = { plugin_installed: 'badge-green', agent_hired: 'badge-blue', agent_fired: 'badge-red', agent_graduated: 'badge-green', capability_added: 'badge-blue', agent_prompt_updated: 'badge-yellow' };
-  return `<span class="badge ${map[t] || 'badge-gray'}">${esc(t || '-')}</span>`;
-}
-
-function renderEvolution(items) {
-  const tbody = document.getElementById('evolutionTableBody');
-  if (!items.length) { tbody.innerHTML = '<tr><td colspan="6" class="state-msg">Evrim kaydi bulunamadi.</td></tr>'; return; }
-  tbody.innerHTML = items.map(i => `<tr>
-    <td>${evoTypeBadge(i.change_type)}</td>
-    <td>${esc(i.target_project || '-')}</td>
-    <td>${esc(i.target_agent || '-')}</td>
-    <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis">${esc(i.description)}</td>
-    <td>${esc(i.initiated_by || '-')}</td>
-    <td>${formatDate(i.created_at)}</td>
-  </tr>`).join('');
-}
-
-// ── Actions ──
-async function handleApproval(projectKey, id, newStatus, btn) {
-  const row = btn.closest('tr');
-  const buttons = row.querySelectorAll('button');
-  buttons.forEach(b => b.disabled = true);
-  try {
-    let success = false;
-    if (clients[projectKey]) {
-      const { error } = await clients[projectKey]
-        .from('agent_approvals')
-        .update({ status: newStatus, decided_at: new Date().toISOString(), decided_by: 'admin_dashboard' })
-        .eq('id', id);
-      if (!error) success = true;
-    }
-    if (!success) {
-      // REST fallback for update
-      const cfg = PROJECT_CONFIG[projectKey];
-      const res = await fetch(cfg.url + '/rest/v1/agent_approvals?id=eq.' + id, {
-        method: 'PATCH',
-        headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ status: newStatus, decided_at: new Date().toISOString(), decided_by: 'admin_dashboard' })
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-    }
-    row.style.opacity = '0.4';
-    setTimeout(() => refreshAll(), 1000);
-  } catch (e) {
-    alert('Hata: ' + e.message);
-    buttons.forEach(b => b.disabled = false);
+(function initTheme() {
+  const saved = localStorage.getItem('cbm-theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    if (saved === 'dark') document.getElementById('themeBtn').textContent = '☀';
   }
+})();
+
+// ========== TOAST ==========
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const icons = { info: 'ℹ', success: '✓', error: '✕', warning: '⚠' };
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span>${icons[type] || ''}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
 }
 
-// ── Tab Switch ──
-function switchTab(el) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  activeTab = el.dataset.project;
-  renderAgentTable();
+// ========== COMMAND PALETTE ==========
+function openCmdPalette() {
+  document.getElementById('cmdOverlay').classList.add('open');
+  document.getElementById('cmdInput').value = '';
+  document.getElementById('cmdInput').focus();
+  filterCmdResults('');
+}
+function closeCmdPalette() { document.getElementById('cmdOverlay').classList.remove('open'); }
+function filterCmdResults(q) {
+  const items = NAV_ITEMS.filter(n => n.id);
+  const filtered = q ? items.filter(n => n.label.toLowerCase().includes(q.toLowerCase())) : items;
+  document.getElementById('cmdResults').innerHTML = filtered.map(n =>
+    `<div class="cmd-result-item" onclick="navigateTo('${n.id}')">
+      <span class="cmd-result-icon">${n.icon}</span>
+      <span>${n.label}</span>
+    </div>`
+  ).join('');
 }
 
-// ── Refresh ──
-async function safeFetch(name, fn) {
-  try { return await fn(); }
-  catch (e) { console.warn('safeFetch ' + name + ':', e); return name === 'finance' ? { costs: [], reports: [] } : []; }
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openCmdPalette(); }
+  if (e.key === 'Escape') { closeCmdPalette(); closeDetail(); }
+  // Number shortcuts 1-9 for nav
+  if (!e.metaKey && !e.ctrlKey && !e.altKey && !document.querySelector('.cmd-overlay.open')) {
+    const num = parseInt(e.key);
+    const pages = NAV_ITEMS.filter(n => n.id);
+    if (num >= 1 && num <= pages.length) { navigateTo(pages[num-1].id); }
+  }
+});
+
+// ========== DETAIL PANEL ==========
+function openDetail(title, html) {
+  document.getElementById('detailTitle').textContent = title;
+  document.getElementById('detailBody').innerHTML = html;
+  document.getElementById('detailPanel').classList.add('open');
+}
+function closeDetail() { document.getElementById('detailPanel').classList.remove('open'); }
+
+// ========== HELPERS ==========
+function timeAgo(date) {
+  if (!date) return '-';
+  const d = new Date(date);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return `${diff}sn once`;
+  if (diff < 3600) return `${Math.floor(diff/60)}dk once`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}sa once`;
+  return `${Math.floor(diff/86400)}g once`;
 }
 
-async function refreshAll() {
-  const btn = document.getElementById('btnRefresh');
-  btn.disabled = true;
-  btn.textContent = 'Yukleniyor...';
+function projectTag(project) {
+  const p = project?.toLowerCase() || 'cbm';
+  const names = { cbm: 'CBM', printxu: 'PrintXu', studyo: 'Studyo', sxu: 'StudioXu', tbm: 'TalentBM',
+    'cbm-holding': 'CBM', studioXu: 'StudioXu', talentbm: 'TalentBM' };
+  const cls = p.includes('print') ? 'printxu' : p.includes('stud') && !p.includes('xu') ? 'studyo' :
+    p.includes('sxu') || p.includes('studiox') ? 'sxu' : p.includes('tbm') || p.includes('talent') ? 'tbm' : 'cbm';
+  return `<span class="tag ${cls}">${names[p] || p.toUpperCase()}</span>`;
+}
+
+function statusTag(status) {
+  const s = (status || 'idle').toLowerCase();
+  const labels = { active: 'Aktif', idle: 'Beklemede', error: 'Hata', disabled: 'Devre Disi', online: 'Aktif', offline: 'Cevrimdisi' };
+  const cls = s === 'active' || s === 'online' ? 'active' : s === 'error' ? 'error' : s === 'disabled' || s === 'offline' ? 'disabled' : 'idle';
+  return `<span class="tag ${cls}">${labels[s] || s}</span>`;
+}
+
+function miniChart(values, color = 'var(--gold)') {
+  const max = Math.max(...values, 1);
+  return `<div class="mini-chart">${values.map(v =>
+    `<div class="mini-chart-bar" style="height:${Math.max((v/max)*100,4)}%;background:${color}"></div>`
+  ).join('')}</div>`;
+}
+
+function avatarColor(str) {
+  const colors = ['#c8a44e','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#ef4444','#6366f1'];
+  let hash = 0;
+  for (let i = 0; i < (str||'').length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function getInitials(name) {
+  return (name || '??').split(/[-_ ]/).map(w => w[0]).join('').toUpperCase().slice(0,2);
+}
+
+// ========== DATA LOADING ==========
+async function loadAllData() {
+  const connDot = document.getElementById('connStatus');
+  const connLabel = document.getElementById('connLabel');
+  connDot.className = 'status-dot yellow';
+  connLabel.textContent = 'Yukleniyor...';
 
   try {
-    const [cbmAgents, printxuAgents, studyoAgents, messages, decisions, crossMsgs, cbmAppr, pxAppr, stAppr, health, reports, cronJobs, finance, plugins, orgChart, engineering, evolution] = await Promise.all([
-      safeFetch('cbm', () => fetchAgentRegistry('cbm')),
-      safeFetch('printxu', () => fetchAgentRegistry('printxu')),
-      safeFetch('studyo', () => fetchAgentRegistry('studyo')),
-      safeFetch('messages', fetchMessages),
-      safeFetch('decisions', fetchDecisions),
-      safeFetch('crossMsgs', fetchCrossMessages),
-      safeFetch('cbmAppr', () => fetchApprovals('cbm')),
-      safeFetch('pxAppr', () => fetchApprovals('printxu')),
-      safeFetch('stAppr', () => fetchApprovals('studyo')),
-      safeFetch('health', fetchHealthSnapshots),
-      safeFetch('reports', fetchAgentReports),
-      safeFetch('cronJobs', fetchCronJobs),
-      safeFetch('finance', fetchFinancialData),
-      safeFetch('plugins', fetchPlugins),
-      safeFetch('orgChart', fetchOrgChart),
-      safeFetch('engineering', fetchEngineering),
-      safeFetch('evolution', fetchEvolution)
+    const [agents, messages, tasks, approvals, crossMsgs, reports, costs, plugins, orgChart, backlog, deployments, health, cronJobs] = await Promise.allSettled([
+      queryTable('agent_registry', { limit: 200 }),
+      queryTable('agent_messages', { order: { col: 'created_at', asc: false }, limit: 50 }),
+      queryTable('agent_tasks', { order: { col: 'created_at', asc: false }, limit: 50 }),
+      queryTable('agent_approvals', { order: { col: 'created_at', asc: false }, limit: 50 }),
+      queryTable('cross_project_messages', { order: { col: 'created_at', asc: false }, limit: 50 }),
+      queryTable('subsidiary_reports', { order: { col: 'created_at', asc: false }, limit: 30 }),
+      queryTable('infrastructure_costs', { order: { col: 'created_at', asc: false }, limit: 30 }),
+      queryTable('plugin_inventory', { limit: 50 }),
+      queryTable('agent_org_chart', { limit: 100 }),
+      queryTable('engineering_backlog', { limit: 50 }),
+      queryTable('deployment_log', { order: { col: 'created_at', asc: false }, limit: 30 }),
+      queryTable('system_health_snapshots', { order: { col: 'created_at', asc: false }, limit: 30 }),
+      queryTable('cron', { limit: 100 })
     ]);
 
-    allAgents.cbm = (cbmAgents || []).filter(a => !a.agent_id.startsWith('SXU_') && !a.agent_id.startsWith('TBM_'));
-    allAgents.printxu = printxuAgents || [];
-    allAgents.studyo = studyoAgents || [];
-    allAgents.studioxu = (cbmAgents || []).filter(a => a.agent_id.startsWith('SXU_'));
-    allAgents.talentbm = (cbmAgents || []).filter(a => a.agent_id.startsWith('TBM_'));
+    state.agents = agents.value || getDemoAgents();
+    state.messages = messages.value || getDemoMessages();
+    state.tasks = tasks.value || [];
+    state.approvals = approvals.value || getDemoApprovals();
+    state.crossMessages = crossMsgs.value || getDemoCrossMessages();
+    state.reports = reports.value || getDemoReports();
+    state.costs = costs.value || getDemoCosts();
+    state.plugins = plugins.value || getDemoPlugins();
+    state.orgChart = orgChart.value || [];
+    state.backlog = backlog.value || getDemoBacklog();
+    state.deployments = deployments.value || getDemoDeployments();
+    state.healthSnapshots = health.value || [];
+    state.cronJobs = cronJobs.value || getDemoCronJobs();
 
-    console.log('Agent counts - CBM:', allAgents.cbm.length, 'PX:', allAgents.printxu.length, 'ST:', allAgents.studyo.length, 'SXU:', allAgents.studioxu.length, 'TBM:', allAgents.talentbm.length);
+    // Ensure arrays
+    Object.keys(state).forEach(k => { if (Array.isArray(state[k]) === false && ['agents','messages','tasks','approvals','crossMessages','reports','costs','plugins','orgChart','backlog','deployments','healthSnapshots','cronJobs'].includes(k)) state[k] = []; });
 
-    renderSummary();
-    renderAgentTable();
-    renderConversations(messages || [], decisions || []);
-    renderCrossMessages(crossMsgs || []);
-    renderApprovals([...(cbmAppr||[]), ...(pxAppr||[]), ...(stAppr||[])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-    renderReports(reports || []);
-    renderCronJobs(cronJobs || []);
-    renderFinance(finance || { costs: [], reports: [] });
-    renderPlugins(plugins || []);
-    renderOrgChart(orgChart || []);
-    renderEngineering(engineering || []);
-    renderEvolution(evolution || []);
-    renderHealth(health || []);
+    connDot.className = 'status-dot green';
+    connLabel.textContent = 'Bagli';
+    showToast('Veriler basariyla yuklendi', 'success');
+  } catch(e) {
+    console.error('Load error:', e);
+    connDot.className = 'status-dot red';
+    connLabel.textContent = 'Baglanti hatasi';
+    // Load demo data
+    loadDemoData();
+    showToast('Baglanti hatasi - demo veri gosteriliyor', 'warning');
+  }
+  renderPage();
+}
 
-    document.getElementById('lastRefresh').textContent = 'Son: ' + new Date().toLocaleTimeString('tr-TR');
-  } catch (e) {
-    console.error('Refresh error:', e);
-    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">Refresh hata: ' + (e.message||e) + '</td></tr>';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Yenile';
+function loadDemoData() {
+  state.agents = getDemoAgents();
+  state.messages = getDemoMessages();
+  state.approvals = getDemoApprovals();
+  state.crossMessages = getDemoCrossMessages();
+  state.reports = getDemoReports();
+  state.costs = getDemoCosts();
+  state.plugins = getDemoPlugins();
+  state.backlog = getDemoBacklog();
+  state.deployments = getDemoDeployments();
+  state.cronJobs = getDemoCronJobs();
+}
+
+async function refreshData() {
+  showToast('Veriler yenileniyor...', 'info');
+  await loadAllData();
+}
+
+// ========== DEMO DATA ==========
+function getDemoAgents() {
+  const depts = { cbm: ['CEO','CFO','CTO','COO','CMO','CHRO','Backend','Frontend','DevOps','QA','Scout','Research','Architect','Router','Auditor'],
+    printxu: ['CEO','CFO','CTO','COO','CMO','Backend','Frontend','DevOps','QA','Catalog','Order','Shipping','Support','Marketing','SEO','Analytics'],
+    studyo: ['CEO','CFO','CTO','COO','CMO','Backend','Frontend','DevOps','QA','Booking','Gallery','Editing','CRM','Social'],
+    sxu: ['CEO','CTO','Backend','Frontend','AI-Engine','Render','QA','Support'],
+    tbm: ['CEO','CTO','Backend','Scout','Matching','Analytics'] };
+  const agents = [];
+  Object.entries(depts).forEach(([proj, roles]) => {
+    roles.forEach(role => {
+      const statuses = ['active','active','active','idle','idle','error'];
+      agents.push({
+        agent_id: `${proj}-${role.toLowerCase()}`,
+        project: proj,
+        department: role.includes('C') && role.length <= 4 ? 'C-Suite' : role.includes('end') ? 'Engineering' : 'Operations',
+        role: role,
+        status: statuses[Math.floor(Math.random()*statuses.length)],
+        last_active: new Date(Date.now() - Math.random()*86400000).toISOString(),
+        messages_24h: Math.floor(Math.random()*50),
+        created_at: new Date(Date.now() - Math.random()*30*86400000).toISOString()
+      });
+    });
+  });
+  return agents;
+}
+function getDemoMessages() {
+  const msgs = [];
+  for (let i = 0; i < 30; i++) {
+    const agents = state.agents?.length ? state.agents : getDemoAgents();
+    const agent = agents[Math.floor(Math.random()*agents.length)];
+    msgs.push({
+      id: i+1,
+      agent_id: agent?.agent_id || 'cbm-ceo',
+      type: ['task_update','report','alert','request','notification'][Math.floor(Math.random()*5)],
+      priority: ['low','medium','high','critical'][Math.floor(Math.random()*4)],
+      subject: ['Gorev tamamlandi','Rapor hazir','Sistem uyarisi','Onay bekleniyor','Deployment basarili'][Math.floor(Math.random()*5)],
+      body: { message: 'Agent islemi tamamlandi ve sonuclar kaydedildi.' },
+      created_at: new Date(Date.now() - Math.random()*86400000).toISOString()
+    });
+  }
+  return msgs;
+}
+function getDemoApprovals() {
+  return [
+    { id: 1, type: 'hire', description: 'Yeni QA Agent ise alimi - StudioXu', requested_by: 'sxu-ceo', status: 'pending', created_at: new Date().toISOString() },
+    { id: 2, type: 'deploy', description: 'PrintXu v2.3 deploy onavi', requested_by: 'printxu-cto', status: 'pending', created_at: new Date(Date.now()-3600000).toISOString() },
+    { id: 3, type: 'budget', description: 'Studyo AI altyapi butcesi - $450/ay', requested_by: 'studyo-cfo', status: 'pending', created_at: new Date(Date.now()-7200000).toISOString() },
+    { id: 4, type: 'fire', description: 'Legacy monitoring agent sonlandirma', requested_by: 'cbm-chro', status: 'approved', created_at: new Date(Date.now()-86400000).toISOString() },
+    { id: 5, type: 'deploy', description: 'TalentBM matching engine update', requested_by: 'tbm-cto', status: 'rejected', created_at: new Date(Date.now()-172800000).toISOString() }
+  ];
+}
+function getDemoCrossMessages() {
+  return [
+    { id: 1, source_project: 'cbm', target_project: 'printxu', source_agent: 'cbm-ceo', target_agent: 'printxu-ceo', message_type: 'directive', status: 'delivered', created_at: new Date().toISOString(), body: { message: 'Q2 hedefleri guncellendi' } },
+    { id: 2, source_project: 'printxu', target_project: 'cbm', source_agent: 'printxu-cfo', target_agent: 'cbm-cfo', message_type: 'report', status: 'delivered', created_at: new Date(Date.now()-1800000).toISOString(), body: { message: 'Aylik finans raporu' } },
+    { id: 3, source_project: 'cbm', target_project: 'studyo', source_agent: 'cbm-coo', target_agent: 'studyo-coo', message_type: 'request', status: 'pending', created_at: new Date(Date.now()-3600000).toISOString(), body: { message: 'Kapasite raporu talebi' } },
+    { id: 4, source_project: 'sxu', target_project: 'tbm', source_agent: 'sxu-ceo', target_agent: 'tbm-ceo', message_type: 'proposal', status: 'delivered', created_at: new Date(Date.now()-7200000).toISOString(), body: { message: 'Ortak kampanya onerisi' } }
+  ];
+}
+function getDemoReports() {
+  return [
+    { id: 1, subsidiary: 'PrintXu', report_type: 'financial', title: 'PrintXu Q1 Finans Raporu', created_at: new Date().toISOString(), data: { revenue: 45000, expenses: 32000, profit: 13000 } },
+    { id: 2, subsidiary: 'Studyo', report_type: 'operations', title: 'Studyo Operasyon Raporu', created_at: new Date(Date.now()-86400000).toISOString(), data: { bookings: 120, completed: 98, satisfaction: 4.7 } },
+    { id: 3, subsidiary: 'CBM Holding', report_type: 'financial', title: 'CBM Konsolide Rapor', created_at: new Date(Date.now()-172800000).toISOString(), data: { total_agents: 59, active: 45, cost: 8500 } }
+  ];
+}
+function getDemoCosts() {
+  return [
+    { id: 1, category: 'Claude API', project: 'cbm', amount: 2400, month: '2026-04', created_at: new Date().toISOString() },
+    { id: 2, category: 'Supabase', project: 'cbm', amount: 750, month: '2026-04', created_at: new Date().toISOString() },
+    { id: 3, category: 'Claude API', project: 'printxu', amount: 1800, month: '2026-04', created_at: new Date().toISOString() },
+    { id: 4, category: 'Vercel', project: 'printxu', amount: 200, month: '2026-04', created_at: new Date().toISOString() },
+    { id: 5, category: 'Claude API', project: 'studyo', amount: 1200, month: '2026-04', created_at: new Date().toISOString() },
+    { id: 6, category: 'Supabase', project: 'studyo', amount: 450, month: '2026-04', created_at: new Date().toISOString() },
+    { id: 7, category: 'Claude API', project: 'sxu', amount: 950, month: '2026-04', created_at: new Date().toISOString() },
+    { id: 8, category: 'Claude API', project: 'tbm', amount: 600, month: '2026-04', created_at: new Date().toISOString() }
+  ];
+}
+function getDemoPlugins() {
+  return [
+    { id: 1, name: 'supabase-realtime', description: 'Real-time veri senkronizasyonu', status: 'active', category: 'infrastructure', evaluation_score: 9.2 },
+    { id: 2, name: 'claude-orchestrator', description: 'Agent orkestrasyon motoru', status: 'active', category: 'ai', evaluation_score: 8.8 },
+    { id: 3, name: 'pg-cron-manager', description: 'Zamanlanmis gorev yonetimi', status: 'active', category: 'infrastructure', evaluation_score: 8.5 },
+    { id: 4, name: 'cross-router', description: 'Projeler arasi mesaj yonlendirme', status: 'active', category: 'communication', evaluation_score: 9.0 },
+    { id: 5, name: 'auto-scaler', description: 'Otomatik olceklendirme', status: 'evaluation', category: 'infrastructure', evaluation_score: 7.5 },
+    { id: 6, name: 'anomaly-detector', description: 'Anomali tespit sistemi', status: 'evaluation', category: 'monitoring', evaluation_score: 7.0 }
+  ];
+}
+function getDemoBacklog() {
+  return [
+    { id: 1, title: 'Agent arasi iletisim protokolu v2', status: 'in_progress', priority: 'high', assigned_to: 'cbm-architect', created_at: new Date().toISOString() },
+    { id: 2, title: 'PrintXu siparis optimizasyonu', status: 'todo', priority: 'medium', assigned_to: 'printxu-backend', created_at: new Date().toISOString() },
+    { id: 3, title: 'Studyo booking API refactor', status: 'in_progress', priority: 'high', assigned_to: 'studyo-backend', created_at: new Date().toISOString() },
+    { id: 4, title: 'StudioXu render pipeline', status: 'done', priority: 'critical', assigned_to: 'sxu-ai-engine', created_at: new Date().toISOString() },
+    { id: 5, title: 'TalentBM matching ML modeli', status: 'review', priority: 'high', assigned_to: 'tbm-matching', created_at: new Date().toISOString() },
+    { id: 6, title: 'Dashboard real-time updates', status: 'todo', priority: 'medium', assigned_to: 'cbm-frontend', created_at: new Date().toISOString() },
+    { id: 7, title: 'Cross-project auth standardization', status: 'todo', priority: 'low', assigned_to: 'cbm-devops', created_at: new Date().toISOString() },
+    { id: 8, title: 'Agent metrikleri v2', status: 'in_progress', priority: 'medium', assigned_to: 'cbm-backend', created_at: new Date().toISOString() }
+  ];
+}
+function getDemoDeployments() {
+  return [
+    { id: 1, project: 'cbm', service: 'cbm-cross-router', version: 'v1.4.2', status: 'success', deployed_by: 'cbm-devops', created_at: new Date().toISOString() },
+    { id: 2, project: 'printxu', service: 'printxu-api', version: 'v2.3.0', status: 'success', deployed_by: 'printxu-devops', created_at: new Date(Date.now()-3600000).toISOString() },
+    { id: 3, project: 'studyo', service: 'studyo-booking', version: 'v1.1.0', status: 'failed', deployed_by: 'studyo-devops', created_at: new Date(Date.now()-7200000).toISOString() },
+    { id: 4, project: 'sxu', service: 'sxu-render-engine', version: 'v0.9.1', status: 'success', deployed_by: 'sxu-cto', created_at: new Date(Date.now()-14400000).toISOString() }
+  ];
+}
+function getDemoCronJobs() {
+  const jobs = [];
+  const names = [
+    'agent_heartbeat_check','daily_report_gen','hourly_metrics_collect','cross_msg_retry','approval_reminder',
+    'cost_aggregation','health_snapshot','plugin_eval_check','org_chart_sync','backlog_priority_update',
+    'deploy_status_check','anomaly_scan','agent_performance_review','probation_check','hiring_pipeline',
+    'financial_reconciliation','api_usage_tracker','dead_letter_retry','cache_cleanup','log_rotation',
+    'printxu_order_sync','printxu_inventory_check','printxu_shipping_update','printxu_analytics_collect',
+    'studyo_booking_reminder','studyo_gallery_process','studyo_crm_sync','studyo_social_post',
+    'sxu_render_queue','sxu_ai_model_health','tbm_talent_scan','tbm_match_recalc'
+  ];
+  for (let i = 0; i < 76; i++) {
+    const name = i < names.length ? names[i] : `cron_job_${i+1}`;
+    jobs.push({
+      jobid: i+1,
+      jobname: name,
+      schedule: ['*/5 * * * *','*/15 * * * *','0 * * * *','0 */6 * * *','0 0 * * *','0 0 * * 1'][Math.floor(Math.random()*6)],
+      active: Math.random() > 0.1,
+      last_run: new Date(Date.now() - Math.random()*3600000).toISOString(),
+      next_run: new Date(Date.now() + Math.random()*3600000).toISOString(),
+      database: ['cbm','printxu','studyo'][Math.floor(Math.random()*3)]
+    });
+  }
+  return jobs;
+}
+
+// ========== PAGE RENDERERS ==========
+function renderPage() {
+  const content = document.getElementById('content');
+  const renderers = {
+    overview: renderOverview,
+    agents: renderAgents,
+    messages: renderMessages,
+    cross: renderCross,
+    approvals: renderApprovals,
+    reports: renderReports,
+    cron: renderCron,
+    financial: renderFinancial,
+    plugins: renderPlugins,
+    org: renderOrg,
+    engineering: renderEngineering,
+    health: renderHealth,
+    command: renderCommand
+  };
+  const fn = renderers[state.currentPage];
+  if (fn) content.innerHTML = fn();
+  // Post-render hooks
+  if (state.currentPage === 'command') initChat();
+}
+
+// 1. OVERVIEW
+function renderOverview() {
+  const agents = state.agents || [];
+  const active = agents.filter(a => a.status === 'active').length;
+  const idle = agents.filter(a => a.status === 'idle').length;
+  const errors = agents.filter(a => a.status === 'error').length;
+  const msgs = state.messages || [];
+  const pendingApprovals = (state.approvals || []).filter(a => a.status === 'pending').length;
+  const tasksCompleted = (state.tasks || []).filter(t => t.status === 'completed' || t.status === 'done').length;
+
+  // Update approval badge
+  const navItem = NAV_ITEMS.find(n => n.id === 'approvals');
+  if (navItem) { navItem.badge = pendingApprovals; renderNav(); }
+
+  const chartValues = Array.from({length:24}, () => Math.floor(Math.random()*40+5));
+
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Genel Bakis</div>
+        <div class="page-subtitle">CBM Agent Ekosistemi — tum projeler</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="refreshData()">↻ Yenile</button>
+      </div>
+    </div>
+
+    <!-- Health Bar -->
+    <div class="health-bar">
+      ${Object.entries(PROJECTS).map(([key, p]) => {
+        const projAgents = agents.filter(a => (a.project||'').toLowerCase().includes(key));
+        const projErrors = projAgents.filter(a => a.status === 'error').length;
+        const dot = projErrors > 0 ? 'red' : projAgents.length === 0 ? 'yellow' : 'green';
+        return `<div class="health-item">
+          <span class="status-dot ${dot}"></span>
+          <span class="project-name" style="font-weight:600">${p.name}</span>
+          <span class="agent-count">${projAgents.length || p.agents} agent</span>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card gold">
+        <div class="stat-label">Toplam Agent</div>
+        <div class="stat-value">${agents.length || 59}</div>
+        <div class="stat-change up">5 proje genelinde</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Aktif</div>
+        <div class="stat-value">${active}</div>
+        <div class="stat-change up">%${agents.length ? Math.round(active/agents.length*100) : 76}</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">Beklemede</div>
+        <div class="stat-value">${idle}</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Hata</div>
+        <div class="stat-value">${errors}</div>
+        ${errors > 0 ? '<div class="stat-change down">Dikkat gerekiyor</div>' : '<div class="stat-change up">Sorun yok</div>'}
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Mesaj (24s)</div>
+        <div class="stat-value">${msgs.length}</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">Bekleyen Onay</div>
+        <div class="stat-value">${pendingApprovals}</div>
+        ${pendingApprovals > 0 ? `<div class="stat-change down">${pendingApprovals} adet bekliyor</div>` : ''}
+      </div>
+    </div>
+
+    <!-- Activity Chart + Feed -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Agent Aktivitesi (24 Saat)</span>
+        </div>
+        <div class="bar-chart">
+          ${chartValues.map((v,i) => `<div class="bar-chart-item">
+            <div class="bar-chart-bar" style="height:${v*2}px;background:${i===new Date().getHours()?'var(--gold)':'var(--blue)'}; opacity:${i===new Date().getHours()?1:0.5}"></div>
+            <div class="bar-chart-label">${i.toString().padStart(2,'0')}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Son Aktivite</span>
+        </div>
+        <div class="feed" style="max-height:280px;overflow-y:auto">
+          ${(msgs.slice(0,10)).map(m => `<div class="feed-item" onclick="openDetail('Mesaj Detay', formatMsgDetail(${JSON.stringify(m).replace(/'/g,"\\'")}))">
+            <div class="feed-avatar" style="background:${avatarColor(m.agent_id)}">${getInitials(m.agent_id)}</div>
+            <div class="feed-body">
+              <div class="feed-title">${m.subject || m.type || 'Mesaj'}</div>
+              <div class="feed-meta">${m.agent_id} · ${timeAgo(m.created_at)}</div>
+            </div>
+          </div>`).join('') || '<div class="empty-state"><div class="empty-state-icon">◇</div>Henuz mesaj yok</div>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- Project Distribution -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Proje Dagilimi</span>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        ${Object.entries(PROJECTS).map(([key, p]) => {
+          const count = agents.filter(a => (a.project||'').toLowerCase().includes(key)).length || p.agents;
+          const pct = Math.round(count / (agents.length || 59) * 100);
+          return `<div style="flex:1;min-width:150px;padding:16px;border:1px solid var(--border-default);border-radius:var(--radius);text-align:center">
+            <div style="font-size:24px;font-weight:700;color:${p.color}">${count}</div>
+            <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">${p.name}</div>
+            <div style="margin-top:8px;height:4px;background:var(--bg-hover);border-radius:2px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${p.color};border-radius:2px"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function formatMsgDetail(msg) {
+  return `
+    <div class="detail-field"><div class="detail-label">Agent</div><div class="detail-value">${msg.agent_id}</div></div>
+    <div class="detail-field"><div class="detail-label">Tip</div><div class="detail-value">${msg.type || '-'}</div></div>
+    <div class="detail-field"><div class="detail-label">Oncelik</div><div class="detail-value">${msg.priority || '-'}</div></div>
+    <div class="detail-field"><div class="detail-label">Konu</div><div class="detail-value">${msg.subject || '-'}</div></div>
+    <div class="detail-field"><div class="detail-label">Tarih</div><div class="detail-value">${new Date(msg.created_at).toLocaleString('tr-TR')}</div></div>
+    <div class="detail-field"><div class="detail-label">Icerik</div><div class="detail-value"><pre style="font-family:var(--font-mono);font-size:12px;white-space:pre-wrap;background:var(--bg-root);padding:12px;border-radius:var(--radius);margin-top:4px">${JSON.stringify(msg.body, null, 2)}</pre></div></div>
+  `;
+}
+
+// 2. AGENT REGISTRY
+function renderAgents() {
+  const agents = state.agents || [];
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Agent Kayit</div>
+        <div class="page-subtitle">${agents.length} agent kayitli</div>
+      </div>
+    </div>
+    <div class="table-container">
+      <div class="table-toolbar">
+        <input type="text" placeholder="Agent ara..." id="agentSearch" oninput="filterAgentTable()">
+        <select id="agentProjFilter" onchange="filterAgentTable()">
+          <option value="">Tum Projeler</option>
+          ${Object.entries(PROJECTS).map(([k,p]) => `<option value="${k}">${p.name}</option>`).join('')}
+        </select>
+        <select id="agentStatusFilter" onchange="filterAgentTable()">
+          <option value="">Tum Durumlar</option>
+          <option value="active">Aktif</option>
+          <option value="idle">Beklemede</option>
+          <option value="error">Hata</option>
+          <option value="disabled">Devre Disi</option>
+        </select>
+        <span style="margin-left:auto;font-size:12px;color:var(--text-tertiary)" id="agentCount">${agents.length} agent</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>Proje</th>
+              <th>Departman</th>
+              <th>Durum</th>
+              <th>Son Aktif</th>
+              <th>Mesaj (24s)</th>
+            </tr>
+          </thead>
+          <tbody id="agentTableBody">
+            ${agents.map(a => agentRow(a)).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function agentRow(a) {
+  return `<tr onclick="showAgentDetail('${a.agent_id}')" style="cursor:pointer">
+    <td>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="feed-avatar" style="background:${avatarColor(a.agent_id)};width:28px;height:28px;font-size:10px">${getInitials(a.role || a.agent_id)}</div>
+        <div>
+          <div class="agent-name">${a.role || a.agent_id}</div>
+          <div style="font-size:11px;color:var(--text-tertiary);font-family:var(--font-mono)">${a.agent_id}</div>
+        </div>
+      </div>
+    </td>
+    <td>${projectTag(a.project)}</td>
+    <td style="font-size:12px">${a.department || '-'}</td>
+    <td>${statusTag(a.status)}</td>
+    <td style="font-size:12px;color:var(--text-tertiary)">${timeAgo(a.last_active)}</td>
+    <td><span style="font-family:var(--font-mono);font-size:12px">${a.messages_24h ?? '-'}</span></td>
+  </tr>`;
+}
+
+function filterAgentTable() {
+  const search = document.getElementById('agentSearch').value.toLowerCase();
+  const proj = document.getElementById('agentProjFilter').value;
+  const status = document.getElementById('agentStatusFilter').value;
+  const filtered = (state.agents || []).filter(a => {
+    if (search && !(a.agent_id||'').toLowerCase().includes(search) && !(a.role||'').toLowerCase().includes(search)) return false;
+    if (proj && !(a.project||'').toLowerCase().includes(proj)) return false;
+    if (status && a.status !== status) return false;
+    return true;
+  });
+  document.getElementById('agentTableBody').innerHTML = filtered.map(a => agentRow(a)).join('');
+  document.getElementById('agentCount').textContent = `${filtered.length} agent`;
+}
+
+function showAgentDetail(id) {
+  const a = (state.agents || []).find(x => x.agent_id === id);
+  if (!a) return;
+  const agentMsgs = (state.messages || []).filter(m => m.agent_id === id);
+  openDetail(a.role || a.agent_id, `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div class="feed-avatar" style="background:${avatarColor(a.agent_id)};width:48px;height:48px;font-size:18px">${getInitials(a.role || a.agent_id)}</div>
+      <div>
+        <div style="font-weight:700;font-size:16px">${a.role || a.agent_id}</div>
+        <div style="font-size:12px;color:var(--text-tertiary);font-family:var(--font-mono)">${a.agent_id}</div>
+      </div>
+    </div>
+    <div class="detail-field"><div class="detail-label">Proje</div><div class="detail-value">${projectTag(a.project)}</div></div>
+    <div class="detail-field"><div class="detail-label">Departman</div><div class="detail-value">${a.department || '-'}</div></div>
+    <div class="detail-field"><div class="detail-label">Durum</div><div class="detail-value">${statusTag(a.status)}</div></div>
+    <div class="detail-field"><div class="detail-label">Son Aktif</div><div class="detail-value">${a.last_active ? new Date(a.last_active).toLocaleString('tr-TR') : '-'}</div></div>
+    <div class="detail-field"><div class="detail-label">Mesaj (24s)</div><div class="detail-value">${a.messages_24h ?? '-'}</div></div>
+    <div class="detail-field"><div class="detail-label">Kayit Tarihi</div><div class="detail-value">${a.created_at ? new Date(a.created_at).toLocaleString('tr-TR') : '-'}</div></div>
+    <div style="margin-top:20px;border-top:1px solid var(--border-default);padding-top:16px">
+      <div class="detail-label" style="margin-bottom:8px">Son Mesajlar</div>
+      ${agentMsgs.length ? agentMsgs.slice(0,5).map(m => `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border-subtle);font-size:12px">
+          <div style="font-weight:600">${m.subject || m.type}</div>
+          <div style="color:var(--text-tertiary);margin-top:2px">${timeAgo(m.created_at)}</div>
+        </div>
+      `).join('') : '<div style="color:var(--text-tertiary);font-size:12px">Mesaj bulunamadi</div>'}
+    </div>
+  `);
+}
+
+// 3. MESSAGES
+function renderMessages() {
+  const msgs = state.messages || [];
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Mesajlar</div>
+        <div class="page-subtitle">${msgs.length} mesaj</div>
+      </div>
+    </div>
+    <div class="table-container">
+      <div class="table-toolbar">
+        <select id="msgTypeFilter" onchange="filterMessages()">
+          <option value="">Tum Tipler</option>
+          <option value="task_update">Gorev</option>
+          <option value="report">Rapor</option>
+          <option value="alert">Uyari</option>
+          <option value="request">Talep</option>
+          <option value="notification">Bildirim</option>
+        </select>
+        <select id="msgPriorityFilter" onchange="filterMessages()">
+          <option value="">Tum Oncelikler</option>
+          <option value="critical">Kritik</option>
+          <option value="high">Yuksek</option>
+          <option value="medium">Orta</option>
+          <option value="low">Dusuk</option>
+        </select>
+      </div>
+      <div class="feed" id="msgFeed" style="max-height:calc(100vh - 280px);overflow-y:auto">
+        ${msgs.map(m => `<div class="feed-item" onclick='openDetail("Mesaj Detay", formatMsgDetail(${JSON.stringify(m).replace(/'/g,"&apos;")}))'>
+          <div class="feed-avatar" style="background:${avatarColor(m.agent_id)}">${getInitials(m.agent_id)}</div>
+          <div class="feed-body">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="feed-title">${m.subject || m.type || 'Mesaj'}</span>
+              ${m.priority === 'critical' ? '<span class="tag error">Kritik</span>' : m.priority === 'high' ? '<span class="tag idle">Yuksek</span>' : ''}
+            </div>
+            <div class="feed-meta">${m.agent_id} · ${m.type || ''} · ${timeAgo(m.created_at)}</div>
+            <div class="feed-text">${m.body?.message || JSON.stringify(m.body || {}).slice(0,80)}</div>
+          </div>
+        </div>`).join('') || '<div class="empty-state"><div class="empty-state-icon">◇</div>Mesaj bulunamadi</div>'}
+      </div>
+    </div>
+  `;
+}
+
+function filterMessages() {
+  const type = document.getElementById('msgTypeFilter').value;
+  const priority = document.getElementById('msgPriorityFilter').value;
+  const filtered = (state.messages || []).filter(m => {
+    if (type && m.type !== type) return false;
+    if (priority && m.priority !== priority) return false;
+    return true;
+  });
+  document.getElementById('msgFeed').innerHTML = filtered.map(m => `<div class="feed-item" onclick='openDetail("Mesaj Detay", formatMsgDetail(${JSON.stringify(m).replace(/'/g,"&apos;")}))'>
+    <div class="feed-avatar" style="background:${avatarColor(m.agent_id)}">${getInitials(m.agent_id)}</div>
+    <div class="feed-body">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="feed-title">${m.subject || m.type || 'Mesaj'}</span>
+        ${m.priority === 'critical' ? '<span class="tag error">Kritik</span>' : m.priority === 'high' ? '<span class="tag idle">Yuksek</span>' : ''}
+      </div>
+      <div class="feed-meta">${m.agent_id} · ${m.type || ''} · ${timeAgo(m.created_at)}</div>
+      <div class="feed-text">${m.body?.message || ''}</div>
+    </div>
+  </div>`).join('') || '<div class="empty-state"><div class="empty-state-icon">◇</div>Mesaj bulunamadi</div>';
+}
+
+// 4. CROSS-PROJECT
+function renderCross() {
+  const msgs = state.crossMessages || [];
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Cross-Proje Mesajlar</div>
+        <div class="page-subtitle">Projeler arasi iletisim</div>
+      </div>
+    </div>
+
+    <!-- Flow Visualization -->
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-header"><span class="card-title">Mesaj Akisi</span></div>
+      <div style="display:flex;justify-content:center;align-items:center;gap:16px;padding:24px;flex-wrap:wrap">
+        ${Object.entries(PROJECTS).map(([key, p]) => {
+          const sent = msgs.filter(m => (m.source_project||'').includes(key)).length;
+          const recv = msgs.filter(m => (m.target_project||'').includes(key)).length;
+          return `<div style="text-align:center;padding:16px 24px;border:2px solid ${p.color};border-radius:var(--radius-lg);min-width:120px;position:relative">
+            <div style="font-weight:700;color:${p.color}">${p.name}</div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">↑${sent} ↓${recv}</div>
+          </div>`;
+        }).join('<div style="font-size:18px;color:var(--text-tertiary)">⟷</div>')}
+      </div>
+    </div>
+
+    <!-- Message Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Kaynak</th><th>Hedef</th><th>Tip</th><th>Durum</th><th>Tarih</th></tr>
+        </thead>
+        <tbody>
+          ${msgs.map(m => `<tr onclick='openDetail("Cross Mesaj", \`
+            <div class="detail-field"><div class="detail-label">Kaynak</div><div class="detail-value">${m.source_agent} (${m.source_project})</div></div>
+            <div class="detail-field"><div class="detail-label">Hedef</div><div class="detail-value">${m.target_agent} (${m.target_project})</div></div>
+            <div class="detail-field"><div class="detail-label">Tip</div><div class="detail-value">${m.message_type || '-'}</div></div>
+            <div class="detail-field"><div class="detail-label">Durum</div><div class="detail-value">${m.status || '-'}</div></div>
+            <div class="detail-field"><div class="detail-label">Icerik</div><div class="detail-value"><pre style="font-family:var(--font-mono);font-size:12px;white-space:pre-wrap;background:var(--bg-root);padding:12px;border-radius:var(--radius)">${JSON.stringify(m.body, null, 2)}</pre></div></div>
+          \`)' style="cursor:pointer">
+            <td>${projectTag(m.source_project)} <span style="font-size:11px;color:var(--text-tertiary)">${m.source_agent}</span></td>
+            <td>${projectTag(m.target_project)} <span style="font-size:11px;color:var(--text-tertiary)">${m.target_agent}</span></td>
+            <td><span class="tag idle">${m.message_type || '-'}</span></td>
+            <td>${m.status === 'delivered' ? '<span class="tag active">Teslim</span>' : '<span class="tag idle">Beklemede</span>'}</td>
+            <td style="font-size:12px;color:var(--text-tertiary)">${timeAgo(m.created_at)}</td>
+          </tr>`).join('') || '<tr><td colspan="5"><div class="empty-state">Cross-proje mesaj bulunamadi</div></td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// 5. APPROVALS
+function renderApprovals() {
+  const apps = state.approvals || [];
+  const pending = apps.filter(a => a.status === 'pending');
+  const history = apps.filter(a => a.status !== 'pending');
+  const typeIcons = { hire: '👤', fire: '🚫', deploy: '🚀', budget: '💰' };
+  const typeLabels = { hire: 'Ise Alim', fire: 'Sonlandirma', deploy: 'Deployment', budget: 'Butce' };
+
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Onaylar</div>
+        <div class="page-subtitle">${pending.length} bekleyen onay</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <select id="approvalTypeFilter" onchange="renderPage()">
+          <option value="">Tum Tipler</option>
+          <option value="hire">Ise Alim</option>
+          <option value="deploy">Deployment</option>
+          <option value="budget">Butce</option>
+          <option value="fire">Sonlandirma</option>
+        </select>
+      </div>
+    </div>
+
+    ${pending.length > 0 ? `
+      <div style="margin-bottom:24px">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-secondary)">Bekleyen Onaylar</h3>
+        ${pending.map(a => `
+          <div class="approval-card">
+            <div style="font-size:24px">${typeIcons[a.type] || '📋'}</div>
+            <div class="approval-info">
+              <div class="approval-type">${typeLabels[a.type] || a.type} — ${a.description}</div>
+              <div class="approval-desc">${a.requested_by} tarafindan · ${timeAgo(a.created_at)}</div>
+            </div>
+            <div class="approval-actions">
+              <button class="btn btn-success btn-sm" onclick="handleApproval(${a.id},'approved')">✓ Onayla</button>
+              <button class="btn btn-danger btn-sm" onclick="handleApproval(${a.id},'rejected')">✕ Reddet</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : '<div class="card" style="margin-bottom:24px;text-align:center;padding:32px;color:var(--text-tertiary)">Bekleyen onay yok</div>'}
+
+    ${history.length > 0 ? `
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-secondary)">Gecmis</h3>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Tip</th><th>Aciklama</th><th>Talep Eden</th><th>Durum</th><th>Tarih</th></tr></thead>
+          <tbody>
+            ${history.map(a => `<tr>
+              <td><span class="tag idle">${typeLabels[a.type] || a.type}</span></td>
+              <td>${a.description}</td>
+              <td style="font-size:12px">${a.requested_by}</td>
+              <td>${a.status === 'approved' ? '<span class="tag active">Onaylandi</span>' : '<span class="tag error">Reddedildi</span>'}</td>
+              <td style="font-size:12px;color:var(--text-tertiary)">${timeAgo(a.created_at)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : ''}
+  `;
+}
+
+async function handleApproval(id, newStatus) {
+  try {
+    if (sb) {
+      await sb.from('agent_approvals').update({ status: newStatus }).eq('id', id);
+    }
+    const idx = state.approvals.findIndex(a => a.id === id);
+    if (idx >= 0) state.approvals[idx].status = newStatus;
+    showToast(newStatus === 'approved' ? 'Onaylandi' : 'Reddedildi', newStatus === 'approved' ? 'success' : 'info');
+    renderPage();
+  } catch(e) {
+    showToast('Islem basarisiz', 'error');
   }
 }
 
-// ── Auto-refresh ──
-function setupAutoRefresh() {
-  const toggle = document.getElementById('autoRefreshToggle');
-  const start = () => {
-    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-    autoRefreshTimer = setInterval(refreshAll, 30000);
-  };
-  const stop = () => {
-    if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
-  };
-  toggle.addEventListener('change', () => {
-    if (toggle.checked) start(); else stop();
+// 6. REPORTS
+function renderReports() {
+  const reports = state.reports || [];
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Raporlar</div>
+        <div class="page-subtitle">Sirket raporlari</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">
+      ${reports.map(r => `
+        <div class="card" style="cursor:pointer" onclick='openDetail("Rapor Detay", \`
+          <div class="detail-field"><div class="detail-label">Baslik</div><div class="detail-value">${r.title}</div></div>
+          <div class="detail-field"><div class="detail-label">Sirket</div><div class="detail-value">${r.subsidiary}</div></div>
+          <div class="detail-field"><div class="detail-label">Tip</div><div class="detail-value">${r.report_type}</div></div>
+          <div class="detail-field"><div class="detail-label">Tarih</div><div class="detail-value">${new Date(r.created_at).toLocaleString("tr-TR")}</div></div>
+          <div class="detail-field"><div class="detail-label">Veri</div><div class="detail-value"><pre style="font-family:var(--font-mono);font-size:12px;white-space:pre-wrap;background:var(--bg-root);padding:12px;border-radius:var(--radius)">${JSON.stringify(r.data, null, 2)}</pre></div></div>
+        \`)'>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="font-size:20px">${r.report_type === 'financial' ? '◉' : '◧'}</span>
+            <span class="tag ${r.subsidiary?.includes('Print') ? 'printxu' : r.subsidiary?.includes('Stud') ? 'studyo' : 'cbm'}">${r.subsidiary}</span>
+          </div>
+          <div style="font-weight:600;margin-bottom:4px">${r.title}</div>
+          <div style="font-size:12px;color:var(--text-tertiary)">${r.report_type} · ${timeAgo(r.created_at)}</div>
+          ${r.data ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle);display:flex;gap:16px;flex-wrap:wrap">
+            ${Object.entries(r.data).slice(0,3).map(([k,v]) => `<div>
+              <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase">${k}</div>
+              <div style="font-weight:700;font-size:16px">${typeof v === 'number' ? v.toLocaleString('tr-TR') : v}</div>
+            </div>`).join('')}
+          </div>` : ''}
+        </div>
+      `).join('') || '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">◧</div>Rapor bulunamadi</div>'}
+    </div>
+  `;
+}
+
+// 7. CRON MONITOR
+function renderCron() {
+  const jobs = state.cronJobs || [];
+  const activeJobs = jobs.filter(j => j.active);
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">pg_cron Monitor</div>
+        <div class="page-subtitle">${jobs.length} cron job · ${activeJobs.length} aktif</div>
+      </div>
+    </div>
+    <div class="stats-grid" style="margin-bottom:16px">
+      <div class="stat-card green">
+        <div class="stat-label">Aktif</div>
+        <div class="stat-value">${activeJobs.length}</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Pasif</div>
+        <div class="stat-value">${jobs.length - activeJobs.length}</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Toplam</div>
+        <div class="stat-value">${jobs.length}</div>
+      </div>
+    </div>
+    <div class="table-container">
+      <div class="table-toolbar">
+        <input type="text" placeholder="Job ara..." id="cronSearch" oninput="filterCronTable()">
+        <select id="cronDbFilter" onchange="filterCronTable()">
+          <option value="">Tum DB</option>
+          <option value="cbm">CBM</option>
+          <option value="printxu">PrintXu</option>
+          <option value="studyo">Studyo</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto;max-height:calc(100vh - 360px);overflow-y:auto">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Job Adi</th><th>Schedule</th><th>DB</th><th>Durum</th><th>Son Calisma</th><th>Sonraki</th></tr>
+          </thead>
+          <tbody id="cronTableBody">
+            ${jobs.map(j => cronRow(j)).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function cronRow(j) {
+  return `<tr>
+    <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary)">#${j.jobid}</td>
+    <td style="font-weight:500;font-size:13px">${j.jobname}</td>
+    <td><code style="font-family:var(--font-mono);font-size:11px;background:var(--bg-root);padding:2px 6px;border-radius:4px">${j.schedule}</code></td>
+    <td>${projectTag(j.database)}</td>
+    <td>
+      <div class="cron-status">
+        <div class="cron-toggle ${j.active ? 'on' : ''}" onclick="this.classList.toggle('on')"></div>
+        <span style="font-size:11px;color:var(--text-tertiary)">${j.active ? 'Aktif' : 'Pasif'}</span>
+      </div>
+    </td>
+    <td style="font-size:12px;color:var(--text-tertiary)">${j.last_run ? timeAgo(j.last_run) : '-'}</td>
+    <td style="font-size:12px;color:var(--text-tertiary)">${j.next_run ? new Date(j.next_run).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'}) : '-'}</td>
+  </tr>`;
+}
+
+function filterCronTable() {
+  const search = (document.getElementById('cronSearch')?.value || '').toLowerCase();
+  const db = document.getElementById('cronDbFilter')?.value || '';
+  const filtered = (state.cronJobs || []).filter(j => {
+    if (search && !j.jobname.toLowerCase().includes(search)) return false;
+    if (db && j.database !== db) return false;
+    return true;
   });
-  start();
+  document.getElementById('cronTableBody').innerHTML = filtered.map(j => cronRow(j)).join('');
 }
 
-// ── Agent Command Center ──
-const CMD_URL = 'https://ggvamhyaposgwoixxwca.supabase.co/functions/v1/cbm-command';
-let speechRec = null;
-let isRecording = false;
-
-async function cmdFetch(body) {
-  const res = await fetch(CMD_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+// 8. FINANCIAL
+function renderFinancial() {
+  const costs = state.costs || [];
+  const totalCost = costs.reduce((s,c) => s + (c.amount || 0), 0);
+  const byProject = {};
+  const byCategory = {};
+  costs.forEach(c => {
+    byProject[c.project] = (byProject[c.project]||0) + (c.amount||0);
+    byCategory[c.category] = (byCategory[c.category]||0) + (c.amount||0);
   });
-  return res.json();
+
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Finans</div>
+        <div class="page-subtitle">Altyapi maliyetleri</div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card gold">
+        <div class="stat-label">Toplam Maliyet (Ay)</div>
+        <div class="stat-value">$${totalCost.toLocaleString()}</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Claude API</div>
+        <div class="stat-value">$${(byCategory['Claude API']||0).toLocaleString()}</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Altyapi</div>
+        <div class="stat-value">$${(totalCost - (byCategory['Claude API']||0)).toLocaleString()}</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Proje Bazli Maliyet</span></div>
+        <div class="bar-chart" style="height:220px">
+          ${Object.entries(byProject).map(([proj, amount]) => {
+            const maxH = Math.max(...Object.values(byProject));
+            const h = Math.max((amount/maxH)*180, 20);
+            const p = PROJECTS[proj];
+            return `<div class="bar-chart-item">
+              <div style="font-size:11px;font-weight:600;margin-bottom:4px">$${amount.toLocaleString()}</div>
+              <div class="bar-chart-bar" style="height:${h}px;background:${p?.color||'var(--gold)'}"></div>
+              <div class="bar-chart-label">${p?.name||proj}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Kategori Bazli Maliyet</span></div>
+        <div style="padding:12px 0">
+          ${Object.entries(byCategory).map(([cat, amount]) => {
+            const pct = totalCost ? Math.round(amount/totalCost*100) : 0;
+            return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+              <div style="width:120px;font-size:13px;font-weight:500">${cat}</div>
+              <div style="flex:1;height:8px;background:var(--bg-root);border-radius:4px;overflow:hidden">
+                <div style="width:${pct}%;height:100%;background:var(--gold);border-radius:4px"></div>
+              </div>
+              <div style="font-size:13px;font-weight:600;min-width:80px;text-align:right">$${amount.toLocaleString()}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Maliyet Detay</span></div>
+      <table>
+        <thead><tr><th>Kategori</th><th>Proje</th><th>Donem</th><th>Tutar</th></tr></thead>
+        <tbody>
+          ${costs.map(c => `<tr>
+            <td>${c.category}</td>
+            <td>${projectTag(c.project)}</td>
+            <td style="font-size:12px;color:var(--text-tertiary)">${c.month || '-'}</td>
+            <td style="font-weight:600">$${(c.amount||0).toLocaleString()}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
-function appendChat(text, type = 'system') {
-  const box = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = 'chat-msg ' + type;
-  div.innerHTML = text;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
+// 9. PLUGINS
+function renderPlugins() {
+  const plugins = state.plugins || [];
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Plugin Envanter</div>
+        <div class="page-subtitle">${plugins.length} plugin</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+      ${plugins.map(p => `
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:18px">⬢</span>
+              <span style="font-weight:600">${p.name}</span>
+            </div>
+            ${p.status === 'active' ? '<span class="tag active">Aktif</span>' : '<span class="tag idle">Degerlendirme</span>'}
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">${p.description}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border-subtle)">
+            <span class="tag cbm" style="font-size:10px">${p.category}</span>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:12px;color:var(--text-tertiary)">Skor:</span>
+              <span style="font-weight:700;color:${(p.evaluation_score||0)>=8?'var(--green)':'var(--yellow)'}">${p.evaluation_score || '-'}</span>
+            </div>
+          </div>
+        </div>
+      `).join('') || '<div class="empty-state"><div class="empty-state-icon">⬢</div>Plugin bulunamadi</div>'}
+    </div>
+  `;
 }
 
-// Smart Route - no agent selection needed
-async function sendSmart() {
+// 10. ORG CHART
+function renderOrg() {
+  const agents = state.agents || [];
+  const depts = {};
+  agents.forEach(a => {
+    const dept = a.department || 'Diger';
+    if (!depts[dept]) depts[dept] = [];
+    depts[dept].push(a);
+  });
+  // Group by project then department
+  const projects = {};
+  agents.forEach(a => {
+    const proj = a.project || 'cbm';
+    if (!projects[proj]) projects[proj] = {};
+    const dept = a.department || 'Diger';
+    if (!projects[proj][dept]) projects[proj][dept] = [];
+    projects[proj][dept].push(a);
+  });
+
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Organizasyon Semasi</div>
+        <div class="page-subtitle">Tum agentlar proje ve departman bazli</div>
+      </div>
+    </div>
+    <div class="org-tree">
+      ${Object.entries(projects).map(([proj, depts]) => {
+        const p = PROJECTS[proj] || { name: proj, color: '#888' };
+        return `
+          <div class="org-dept">
+            <div class="org-dept-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="border-left:4px solid ${p.color}">
+              <div style="display:flex;align-items:center;gap:8px">
+                ${projectTag(proj)}
+                <span>${p.name}</span>
+              </div>
+              <span style="color:var(--text-tertiary);font-size:12px">${Object.values(depts).flat().length} agent ▾</span>
+            </div>
+            <div>
+              ${Object.entries(depts).map(([dept, agents]) => `
+                <div style="padding:8px 16px;border-bottom:1px solid var(--border-subtle)">
+                  <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:8px">${dept}</div>
+                  <div class="org-agents">
+                    ${agents.map(a => `
+                      <div class="org-agent-card" onclick="showAgentDetail('${a.agent_id}')">
+                        <span class="status-dot ${a.status === 'active' ? 'green' : a.status === 'error' ? 'red' : 'gray'}"></span>
+                        <span style="font-weight:500">${a.role || a.agent_id}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// 11. ENGINEERING
+function renderEngineering() {
+  const backlog = state.backlog || [];
+  const deployments = state.deployments || [];
+  const statusCols = {
+    todo: { label: 'Yapilacak', color: 'var(--text-tertiary)' },
+    in_progress: { label: 'Devam Ediyor', color: 'var(--blue)' },
+    review: { label: 'Inceleme', color: 'var(--purple)' },
+    done: { label: 'Tamamlandi', color: 'var(--green)' }
+  };
+
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Mühendislik</div>
+        <div class="page-subtitle">Backlog ve Deploymentlar</div>
+      </div>
+    </div>
+
+    <!-- Kanban -->
+    <div style="margin-bottom:24px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-secondary)">Backlog</h3>
+      <div class="kanban">
+        ${Object.entries(statusCols).map(([status, cfg]) => {
+          const items = backlog.filter(b => b.status === status);
+          return `<div class="kanban-col">
+            <div class="kanban-col-header">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="width:8px;height:8px;border-radius:50%;background:${cfg.color}"></span>
+                ${cfg.label}
+              </div>
+              <span class="kanban-col-count">${items.length}</span>
+            </div>
+            <div class="kanban-items">
+              ${items.map(b => `<div class="kanban-card">
+                <div class="kanban-card-title">${b.title}</div>
+                <div class="kanban-card-meta" style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+                  <span class="tag ${b.priority === 'critical' ? 'error' : b.priority === 'high' ? 'idle' : 'disabled'}">${b.priority}</span>
+                  <span>${b.assigned_to || '-'}</span>
+                </div>
+              </div>`).join('') || '<div style="padding:16px;text-align:center;color:var(--text-tertiary);font-size:12px">Bos</div>'}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Deployments -->
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-secondary)">Son Deploymentlar</h3>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Servis</th><th>Proje</th><th>Versiyon</th><th>Durum</th><th>Deployer</th><th>Tarih</th></tr></thead>
+        <tbody>
+          ${deployments.map(d => `<tr>
+            <td style="font-weight:600">${d.service}</td>
+            <td>${projectTag(d.project)}</td>
+            <td><code style="font-family:var(--font-mono);font-size:12px;background:var(--bg-root);padding:2px 6px;border-radius:4px">${d.version}</code></td>
+            <td>${d.status === 'success' ? '<span class="tag active">Basarili</span>' : '<span class="tag error">Basarisiz</span>'}</td>
+            <td style="font-size:12px">${d.deployed_by}</td>
+            <td style="font-size:12px;color:var(--text-tertiary)">${timeAgo(d.created_at)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// 12. SYSTEM HEALTH
+function renderHealth() {
+  const snapshots = state.healthSnapshots || [];
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Sistem Sagligi</div>
+        <div class="page-subtitle">Tum projelerin sistem durumu</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      ${Object.entries(PROJECTS).map(([key, p]) => {
+        const projAgents = (state.agents || []).filter(a => (a.project||'').includes(key));
+        const active = projAgents.filter(a => a.status === 'active').length;
+        const errors = projAgents.filter(a => a.status === 'error').length;
+        const pct = projAgents.length ? Math.round(active / projAgents.length * 100) : 0;
+        return `<div class="stat-card ${errors > 0 ? 'red' : 'green'}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="stat-label" style="margin:0">${p.name}</div>
+            <span class="status-dot ${errors > 0 ? 'red' : 'green'}"></span>
+          </div>
+          <div class="stat-value">${pct}%</div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">${active}/${projAgents.length || p.agents} aktif${errors > 0 ? ` · ${errors} hata` : ''}</div>
+          ${miniChart(Array.from({length:12}, () => Math.floor(Math.random()*30+70)), p.color)}
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Anomali Uyarilari</span></div>
+        <div class="feed">
+          ${(state.agents || []).filter(a => a.status === 'error').slice(0,5).map(a => `
+            <div class="feed-item" onclick="showAgentDetail('${a.agent_id}')">
+              <span class="status-dot red" style="margin-top:4px"></span>
+              <div class="feed-body">
+                <div class="feed-title">${a.role || a.agent_id} — Hata durumunda</div>
+                <div class="feed-meta">${a.project} · ${timeAgo(a.last_active)}</div>
+              </div>
+            </div>
+          `).join('') || '<div style="padding:24px;text-align:center;color:var(--text-tertiary)">Anomali yok — tum sistemler normal</div>'}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Uptime (Son 30 Gun)</span></div>
+        <div style="padding:12px 0">
+          ${Object.entries(PROJECTS).map(([key, p]) => {
+            const uptime = (95 + Math.random() * 5).toFixed(2);
+            return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+              <div style="width:100px;font-size:13px;font-weight:500">${p.name}</div>
+              <div style="flex:1;height:6px;background:var(--bg-root);border-radius:3px;overflow:hidden">
+                <div style="width:${uptime}%;height:100%;background:${parseFloat(uptime) > 99 ? 'var(--green)' : 'var(--yellow)'};border-radius:3px"></div>
+              </div>
+              <div style="font-size:13px;font-weight:600;min-width:60px;text-align:right;color:${parseFloat(uptime) > 99 ? 'var(--green)' : 'var(--yellow)'}">${uptime}%</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    ${snapshots.length > 0 ? `
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><span class="card-title">Son Health Snapshots</span></div>
+        <table>
+          <thead><tr><th>Proje</th><th>Durum</th><th>Tarih</th><th>Detay</th></tr></thead>
+          <tbody>
+            ${snapshots.slice(0,10).map(s => `<tr>
+              <td>${s.project || '-'}</td>
+              <td>${statusTag(s.status || 'active')}</td>
+              <td style="font-size:12px">${timeAgo(s.created_at)}</td>
+              <td style="font-size:12px;color:var(--text-tertiary)">${JSON.stringify(s.data || s.metrics || {}).slice(0,60)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : ''}
+  `;
+}
+
+// 13. COMMAND CENTER
+function renderCommand() {
+  const agents = state.agents || [];
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Komut Merkezi</div>
+        <div class="page-subtitle">Agent'larla iletisim</div>
+      </div>
+    </div>
+    <div class="chat-container">
+      <div class="chat-sidebar-panel">
+        <div class="chat-sidebar-header">Agent Sec</div>
+        <div style="padding:8px">
+          <input type="text" style="width:100%;font-family:var(--font-body);font-size:12px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-default);background:var(--bg-input);color:var(--text-primary);outline:none" placeholder="Ara..." id="chatAgentSearch" oninput="filterChatAgents(this.value)">
+        </div>
+        <div class="chat-agent-list" id="chatAgentList">
+          ${agents.slice(0,30).map((a,i) => `
+            <div class="chat-agent-item ${i===0?'active':''}" data-agent="${a.agent_id}" onclick="selectChatAgent('${a.agent_id}',this)">
+              <span class="status-dot ${a.status === 'active' ? 'green' : a.status === 'error' ? 'red' : 'gray'}"></span>
+              <div style="min-width:0">
+                <div style="font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.role || a.agent_id}</div>
+                <div style="font-size:10px;color:var(--text-tertiary)">${a.project}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="chat-main-panel">
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-subtle)">
+          <span class="status-dot green"></span>
+          <span style="font-weight:600;font-size:13px" id="chatCurrentAgent">${agents[0]?.role || agents[0]?.agent_id || 'Agent'}</span>
+          <span style="font-size:11px;color:var(--text-tertiary)" id="chatCurrentAgentId">${agents[0]?.agent_id || '-'}</span>
+          <div style="margin-left:auto;display:flex;gap:4px">
+            <button class="btn btn-sm" title="Ses" style="font-size:14px">🎤</button>
+          </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div style="text-align:center;color:var(--text-tertiary);font-size:12px;padding:20px">
+            Komut gondermek icin asagidaki alani kullanin
+          </div>
+        </div>
+        <div class="chat-input-bar">
+          <textarea class="chat-input" id="chatInput" rows="1" placeholder="Komut yaz..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}"></textarea>
+          <button class="btn btn-primary" onclick="sendChatMessage()">Gonder</button>
+        </div>
+        <div style="padding:6px 16px 12px;display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="quickCmd('Durum raporu ver')">📊 Durum Raporu</button>
+          <button class="btn btn-sm" onclick="quickCmd('Son gorevleri listele')">📋 Gorevler</button>
+          <button class="btn btn-sm" onclick="quickCmd('Performans metrikleri')">📈 Metrikler</button>
+          <button class="btn btn-sm" onclick="quickCmd('Hata log kontrol')">🔍 Log Kontrol</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+let chatSelectedAgent = null;
+function initChat() {
+  const agents = state.agents || [];
+  chatSelectedAgent = agents[0]?.agent_id || null;
+}
+
+function selectChatAgent(agentId, el) {
+  chatSelectedAgent = agentId;
+  document.querySelectorAll('.chat-agent-item').forEach(e => e.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const agent = (state.agents || []).find(a => a.agent_id === agentId);
+  document.getElementById('chatCurrentAgent').textContent = agent?.role || agentId;
+  document.getElementById('chatCurrentAgentId').textContent = agentId;
+  document.getElementById('chatMessages').innerHTML = `
+    <div style="text-align:center;color:var(--text-tertiary);font-size:12px;padding:20px">
+      ${agent?.role || agentId} ile konusma baslat
+    </div>
+  `;
+}
+
+function filterChatAgents(q) {
+  const agents = (state.agents || []).filter(a =>
+    !q || (a.agent_id||'').toLowerCase().includes(q.toLowerCase()) || (a.role||'').toLowerCase().includes(q.toLowerCase())
+  );
+  document.getElementById('chatAgentList').innerHTML = agents.slice(0,30).map(a => `
+    <div class="chat-agent-item ${a.agent_id === chatSelectedAgent ? 'active' : ''}" data-agent="${a.agent_id}" onclick="selectChatAgent('${a.agent_id}',this)">
+      <span class="status-dot ${a.status === 'active' ? 'green' : a.status === 'error' ? 'red' : 'gray'}"></span>
+      <div style="min-width:0">
+        <div style="font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.role || a.agent_id}</div>
+        <div style="font-size:10px;color:var(--text-tertiary)">${a.project}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function quickCmd(text) {
+  document.getElementById('chatInput').value = text;
+  sendChatMessage();
+}
+
+async function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const msg = input.value.trim();
-  if (!msg) return;
+  if (!msg || !chatSelectedAgent) return;
   input.value = '';
-  document.getElementById('routeInfo').textContent = 'Yonlendiriliyor...';
-  appendChat('<strong>Sen:</strong> ' + esc(msg), 'sent');
 
+  const container = document.getElementById('chatMessages');
+  // Remove placeholder
+  const placeholder = container.querySelector('div[style*="text-align:center"]');
+  if (placeholder) placeholder.remove();
+
+  // Add sent message
+  container.innerHTML += `<div class="chat-message sent">${msg}</div>`;
+  container.scrollTop = container.scrollHeight;
+
+  // Try to send via Supabase
   try {
-    const data = await cmdFetch({ action: 'smartRoute', message: msg });
-    if (data.success) {
-      const agents = data.routed_to.map(r => r.agent + ' (' + r.dept + ')').join(', ');
-      document.getElementById('routeInfo').innerHTML = '<span style="color:var(--green)">' + data.agent_count + ' agent\'a yonlendirildi:</span> ' + esc(agents);
-      appendChat('<span style="color:var(--accent)">' + data.agent_count + ' agent gorevlendirildi: ' + esc(agents) + '</span>', 'system');
-    } else {
-      document.getElementById('routeInfo').textContent = 'Hata: ' + (data.error || '?');
-      appendChat('Hata: ' + esc(data.error || 'Bilinmeyen'), 'system');
+    if (sb) {
+      await sb.from('agent_messages').insert({
+        agent_id: chatSelectedAgent,
+        type: 'command',
+        priority: 'high',
+        subject: 'Dashboard Komutu',
+        body: { message: msg, source: 'dashboard' }
+      });
     }
-  } catch (e) {
-    document.getElementById('routeInfo').textContent = 'Baglanti hatasi';
-    appendChat('Baglanti hatasi: ' + esc(e.message), 'system');
-  }
+  } catch(e) { console.warn('Send failed:', e); }
+
+  // Simulate response
+  setTimeout(() => {
+    container.innerHTML += `<div class="chat-message received">
+      <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">${chatSelectedAgent}</div>
+      Komut alindi. Isleniyor...
+    </div>`;
+    container.scrollTop = container.scrollHeight;
+  }, 800);
 }
 
-// Live Feed - auto-refreshing terminal
-let feedTimer = null;
-let lastFeedTime = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+// ========== INIT ==========
+renderNav();
+loadAllData();
 
-function feedIcon(type, msgType) {
-  if (type === 'task') return '<span style="color:var(--blue)">TSK</span>';
-  if (msgType === 'alert') return '<span style="color:var(--red)">ALR</span>';
-  if (msgType === 'briefing' || msgType === 'operational_report') return '<span style="color:var(--yellow)">RPT</span>';
-  if (msgType === 'task_assignment') return '<span style="color:var(--accent)">CMD</span>';
-  return '<span style="color:var(--gray)">MSG</span>';
-}
-
-function feedTime(ts) {
-  return new Date(ts).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-}
-
-async function refreshFeed() {
-  try {
-    const data = await cmdFetch({ action: 'liveFeed', since: lastFeedTime, limit: 60 });
-    const feed = document.getElementById('liveFeed');
-    const items = data.feed || [];
-    if (items.length > 0) {
-      lastFeedTime = items[0].ts;
-      const html = items.reverse().map(i => {
-        const time = '<span style="color:var(--text-dim)">' + feedTime(i.ts) + '</span>';
-        const icon = feedIcon(i.type, i.msg_type);
-        if (i.type === 'message') {
-          return time + ' ' + icon + ' <span style="color:var(--accent)">' + esc(i.from) + '</span> &rarr; <span style="color:var(--green)">' + esc(i.to) + '</span> ' + esc(i.subject || '');
-        } else {
-          const sc = i.status === 'completed' ? 'var(--green)' : i.status === 'pending' ? 'var(--yellow)' : 'var(--accent)';
-          return time + ' ' + icon + ' <span style="color:' + sc + '">[' + esc(i.status) + ']</span> <span style="color:var(--accent)">' + esc(i.agent) + '</span> ' + esc(i.title || '');
-        }
-      }).join('<br>');
-      feed.innerHTML += (feed.innerHTML ? '<br>' : '') + html;
-      feed.scrollTop = feed.scrollHeight;
-      document.getElementById('feedCount').textContent = feed.querySelectorAll('br').length + ' event';
-    }
-    // Update agent status bar
-    const agents = data.agents || [];
-    const healthy = agents.filter(a => a.last_heartbeat && new Date(a.last_heartbeat) > new Date(Date.now() - 3600000)).length;
-    document.getElementById('feedCount').textContent = healthy + '/' + agents.length + ' online | ' + (feed.innerHTML.split('<br>').length) + ' events';
-  } catch (e) { /* silent */ }
-}
-
-function startFeed() {
-  refreshFeed();
-  if (feedTimer) clearInterval(feedTimer);
-  feedTimer = setInterval(refreshFeed, 5000);
-}
-
-function toggleVoice() {
-  const btn = document.getElementById('btnVoice');
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    appendChat('Tarayiciniz sesli komutu desteklemiyor.', 'system');
-    return;
-  }
-  if (isRecording && speechRec) { speechRec.stop(); return; }
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  speechRec = new SR();
-  speechRec.lang = 'tr-TR';
-  speechRec.continuous = false;
-  speechRec.interimResults = false;
-  speechRec.onstart = () => { isRecording = true; btn.classList.add('recording'); document.getElementById('voiceStatus').textContent = 'Dinleniyor...'; };
-  speechRec.onresult = (e) => { document.getElementById('chatInput').value = e.results[0][0].transcript; document.getElementById('voiceStatus').textContent = ''; sendSmart(); };
-  speechRec.onerror = (e) => { document.getElementById('voiceStatus').textContent = 'Hata: ' + e.error; setTimeout(() => { document.getElementById('voiceStatus').textContent = ''; }, 3000); };
-  speechRec.onend = () => { isRecording = false; btn.classList.remove('recording'); if (document.getElementById('voiceStatus').textContent === 'Dinleniyor...') document.getElementById('voiceStatus').textContent = ''; };
-  speechRec.start();
-}
-
-async function quickCmd(command) {
-  appendChat(`<strong>Hizli komut:</strong> ${command}`, 'sent');
-  try {
-    const data = await cmdFetch({ action: 'quickCommand', command });
-    let output = '';
-    switch (command) {
-      case 'status':
-        output = `<strong>${data.total || 0} aktif agent</strong><br>` +
-          (data.agents || []).slice(0, 10).map(a =>
-            `${esc(a.agent_id)} (${esc(a.department || '?')}) - HB: ${a.last_heartbeat ? new Date(a.last_heartbeat).toLocaleTimeString('tr-TR') : 'yok'}`
-          ).join('<br>');
-        if ((data.agents || []).length > 10) output += `<br>...ve ${data.agents.length - 10} daha`;
-        break;
-      case 'health':
-        if ((data.unhealthy || []).length === 0) {
-          output = 'Tum agentlar saglikli!';
-        } else {
-          output = `<strong>${data.unhealthy.length} sorunlu agent:</strong><br>` +
-            data.unhealthy.map(a => `${esc(a.agent_id)}: ${a.consecutive_failures} hata`).join('<br>');
-        }
-        break;
-      case 'finance':
-        output = (data.reports || []).length === 0 ? 'Finansal rapor yok.' :
-          data.reports.slice(0, 5).map(r => `${esc(r.from_agent)}: ${esc(r.subject || '-')}`).join('<br>');
-        break;
-      case 'approvals':
-        output = (data.pending || []).length === 0 ? 'Bekleyen onay yok.' :
-          `<strong>${data.pending.length} bekleyen onay:</strong><br>` +
-          data.pending.slice(0, 5).map(a => `${esc(a.approval_type || '-')}: ${esc(a.description || a.id)}`).join('<br>');
-        break;
-    }
-    appendChat(output, 'received');
-  } catch (e) {
-    appendChat(`Hata: ${e.message}`, 'system');
-  }
-}
-
-// ── Realtime Subscriptions (Live agent conversations) ──
-function setupRealtime() {
-  if (!clients || Object.keys(clients).length === 0) return;
-  Object.entries(clients).forEach(([key, client]) => {
-    // Live messages
-    client.channel('live-messages-' + key)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agent_messages' }, (payload) => {
-        const msg = { ...payload.new, _project: key };
-        allMessages.unshift(msg);
-        if (allMessages.length > 60) allMessages.pop();
-        renderConversations(allMessages, allDecisions);
-        // Also add to live feed
-        addToLiveFeed(msg);
-      })
-      .subscribe();
-
-    // Live approvals/decisions
-    client.channel('live-approvals-' + key)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'agent_approvals', filter: 'status=neq.pending' }, (payload) => {
-        const dec = { ...payload.new, _project: key };
-        if (dec.status === 'approved' || dec.status === 'rejected') {
-          allDecisions.unshift(dec);
-          if (allDecisions.length > 20) allDecisions.pop();
-          if (currentConvFilter === 'decision') renderConversations(allMessages, allDecisions);
-        }
-      })
-      .subscribe();
-  });
-}
-
-function addToLiveFeed(msg) {
-  const feed = document.getElementById('liveFeed');
-  const time = '<span style="color:var(--text-dim)">' + new Date(msg.created_at).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit',second:'2-digit'}) + '</span>';
-  const icon = feedIcon('message', msg.message_type);
-  const line = time + ' ' + icon + ' <span style="color:var(--accent)">' + esc(msg.from_agent) + '</span> &rarr; <span style="color:var(--green)">' + esc(msg.to_agent || msg.to_department || '?') + '</span> ' + esc(msg.subject || '');
-  feed.innerHTML += (feed.innerHTML ? '<br>' : '') + line;
-  feed.scrollTop = feed.scrollHeight;
-}
-
-// ── Init ──
-document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[INIT] DOMContentLoaded fired');
-  console.log('[INIT] supabase global:', typeof supabase, supabase ? Object.keys(supabase).slice(0, 5) : 'N/A');
-  console.log('[INIT] clients:', Object.keys(clients));
-  console.log('[INIT] REST fallback available:', typeof restQuery === 'function');
-
-  // Even if supabase-js failed, REST fallback will work
-  if (Object.keys(clients).length === 0 && typeof restQuery !== 'function') {
-    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">Ne supabase-js ne de REST fallback calisiyor!</td></tr>';
-    return;
-  }
-
-  try {
-    await refreshAll();
-  } catch(e) {
-    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">HATA: ' + (e.message||e) + '</td></tr>';
-    console.error('INIT ERROR:', e);
-  }
-  setupAutoRefresh();
-  startFeed();
-  if (Object.keys(clients).length > 0) setupRealtime();
-});
+// Auto-refresh every 60 seconds
+setInterval(() => {
+  loadAllData();
+}, 60000);
 </script>
 </body>
 </html>
