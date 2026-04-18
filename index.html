@@ -409,6 +409,7 @@
       <table>
         <thead>
           <tr>
+            <th>Proje</th>
             <th>Job ID</th>
             <th>Ad</th>
             <th>Zamanlama</th>
@@ -878,9 +879,16 @@ async function fetchAgentReports() {
 
 async function fetchCronJobs() {
   try {
-    const { data, error } = await clients.cbm.rpc('get_cron_jobs');
-    if (error) throw error;
-    return data || [];
+    const results = await Promise.all(
+      Object.entries(clients).map(async ([key, client]) => {
+        try {
+          const { data, error } = await client.rpc('get_cron_jobs');
+          if (error) throw error;
+          return (data || []).map(j => ({ ...j, _project: key }));
+        } catch { return []; }
+      })
+    );
+    return results.flat().sort((a, b) => (a._project + a.jobname).localeCompare(b._project + b.jobname));
   } catch (e) {
     console.warn('cron jobs:', e.message);
     return [];
@@ -924,10 +932,11 @@ function renderReports(reports) {
 function renderCronJobs(jobs) {
   const tbody = document.getElementById('cronTableBody');
   if (!jobs.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="state-msg">pg_cron verisi alinamadi (RPC fonksiyonu gerekli olabilir).</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="state-msg">pg_cron verisi alinamadi.</td></tr>';
     return;
   }
   tbody.innerHTML = jobs.map(j => `<tr>
+    <td><span class="badge badge-blue">${esc(PROJECT_LABELS[j._project] || j._project)}</span></td>
     <td>${esc(j.jobid)}</td>
     <td><strong>${esc(j.jobname)}</strong></td>
     <td><code>${esc(j.schedule)}</code></td>
