@@ -673,23 +673,63 @@
 </div>
 
 <script>
-// ── Supabase Clients ──
-const { createClient } = supabase;
-
-const clients = {
-  cbm: createClient(
-    'https://ggvamhyaposgwoixxwca.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndmFtaHlhcG9zZ3dvaXh4d2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MDg2MzcsImV4cCI6MjA4OTQ4NDYzN30.lRVKnmp_b97SiTz8VudSwEBwFxvTTghejaf-TFZFhqs'
-  ),
-  printxu: createClient(
-    'https://finkngmejydwqikinbdv.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpbmtuZ21lanlkd3Fpa2luYmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyOTc4ODgsImV4cCI6MjA4ODg3Mzg4OH0.wqXKpv_DbMNvMORtJehIg8AzfR7875wSAraRai6EHAA'
-  ),
-  studyo: createClient(
-    'https://jlinpfqqssqclsyhptfz.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsaW5wZnFxc3NxY2xzeWhwdGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDY1NDksImV4cCI6MjA5MTMyMjU0OX0.gz70aczXTNYE4G_P4eCDMyoFVwNr3Ap7--VJS6imjHc'
-  )
+// ── Project Config ──
+const PROJECT_CONFIG = {
+  cbm: {
+    url: 'https://ggvamhyaposgwoixxwca.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndmFtaHlhcG9zZ3dvaXh4d2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MDg2MzcsImV4cCI6MjA4OTQ4NDYzN30.lRVKnmp_b97SiTz8VudSwEBwFxvTTghejaf-TFZFhqs'
+  },
+  printxu: {
+    url: 'https://finkngmejydwqikinbdv.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpbmtuZ21lanlkd3Fpa2luYmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyOTc4ODgsImV4cCI6MjA4ODg3Mzg4OH0.wqXKpv_DbMNvMORtJehIg8AzfR7875wSAraRai6EHAA'
+  },
+  studyo: {
+    url: 'https://jlinpfqqssqclsyhptfz.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsaW5wZnFxc3NxY2xzeWhwdGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDY1NDksImV4cCI6MjA5MTMyMjU0OX0.gz70aczXTNYE4G_P4eCDMyoFVwNr3Ap7--VJS6imjHc'
+  }
 };
+
+// ── Supabase Clients ──
+let clients = {};
+try {
+  const { createClient } = supabase;
+  clients = {
+    cbm: createClient(PROJECT_CONFIG.cbm.url, PROJECT_CONFIG.cbm.key),
+    printxu: createClient(PROJECT_CONFIG.printxu.url, PROJECT_CONFIG.printxu.key),
+    studyo: createClient(PROJECT_CONFIG.studyo.url, PROJECT_CONFIG.studyo.key)
+  };
+  console.log('[INIT] Supabase clients created OK');
+} catch (e) {
+  console.error('[INIT] Supabase client creation failed:', e);
+}
+
+// ── Direct REST fallback (bypasses supabase-js entirely) ──
+async function restQuery(projectKey, table, params = {}) {
+  const cfg = PROJECT_CONFIG[projectKey];
+  if (!cfg) return { data: null, error: 'Unknown project: ' + projectKey };
+  const url = new URL(cfg.url + '/rest/v1/' + table);
+  url.searchParams.set('select', params.select || '*');
+  if (params.order) url.searchParams.set('order', params.order);
+  if (params.limit) url.searchParams.set('limit', String(params.limit));
+  if (params.filters) {
+    for (const [k, v] of Object.entries(params.filters)) {
+      url.searchParams.set(k, v);
+    }
+  }
+  const res = await fetch(url.toString(), {
+    headers: {
+      'apikey': cfg.key,
+      'Authorization': 'Bearer ' + cfg.key,
+      'Accept': 'application/json'
+    }
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    return { data: null, error: `HTTP ${res.status}: ${text}` };
+  }
+  const data = await res.json();
+  return { data, error: null };
+}
 
 const PROJECT_LABELS = { cbm: 'CBM', printxu: 'PrintXu', studyo: 'Studyo', studioxu: 'StudioXu', talentbm: 'TalentBM' };
 
@@ -782,38 +822,71 @@ function esc(s) {
 
 // ── Data Fetching ──
 async function fetchAgentRegistry(projectKey) {
+  // Try supabase-js first, then fall back to direct REST
   try {
     const client = clients[projectKey];
-    if (!client) { console.warn('No client for', projectKey); return []; }
-    const { data, error } = await client
-      .from('agent_registry')
-      .select('*')
-      .order('agent_id', { ascending: true });
-    if (error) { console.error(`agent_registry [${projectKey}] error:`, error); throw error; }
-    console.log(`agent_registry [${projectKey}]: ${(data||[]).length} agents loaded`);
+    if (client) {
+      const { data, error } = await client
+        .from('agent_registry')
+        .select('*')
+        .order('agent_id', { ascending: true });
+      if (!error && data && data.length > 0) {
+        console.log(`[supabase-js] agent_registry [${projectKey}]: ${data.length} agents`);
+        return data;
+      }
+      if (error) console.warn(`[supabase-js] agent_registry [${projectKey}] error:`, error.message || error);
+    }
+  } catch (e) {
+    console.warn(`[supabase-js] agent_registry [${projectKey}] exception:`, e.message || e);
+  }
+  // Fallback: direct REST API call
+  try {
+    console.log(`[REST fallback] agent_registry [${projectKey}]...`);
+    const { data, error } = await restQuery(projectKey, 'agent_registry', { order: 'agent_id.asc' });
+    if (error) { console.error(`[REST] agent_registry [${projectKey}] error:`, error); return []; }
+    console.log(`[REST] agent_registry [${projectKey}]: ${(data||[]).length} agents`);
     return data || [];
   } catch (e) {
-    console.error(`agent_registry [${projectKey}] FAILED:`, e);
+    console.error(`[REST] agent_registry [${projectKey}] FAILED:`, e);
     return [];
   }
 }
 
+async function fetchFromAllProjects(table, params = {}) {
+  const projectKeys = Object.keys(PROJECT_CONFIG);
+  const results = await Promise.all(
+    projectKeys.map(async (key) => {
+      try {
+        // Try supabase-js first
+        const client = clients[key];
+        if (client) {
+          const q = client.from(table).select(params.select || '*').order(params.orderBy || 'created_at', { ascending: false });
+          if (params.limit) q.limit(params.limit);
+          if (params.eq) for (const [k,v] of Object.entries(params.eq)) q.eq(k, v);
+          if (params.inFilter) q.in(params.inFilter[0], params.inFilter[1]);
+          const { data, error } = await q;
+          if (!error && data) return (data || []).map(r => ({ ...r, _project: key }));
+        }
+      } catch {}
+      // Fallback to REST
+      try {
+        const restParams = { order: (params.orderBy || 'created_at') + '.desc', limit: params.limit };
+        const filters = {};
+        if (params.eq) for (const [k,v] of Object.entries(params.eq)) filters[k] = 'eq.' + v;
+        if (params.inFilter) filters[params.inFilter[0]] = 'in.(' + params.inFilter[1].join(',') + ')';
+        restParams.filters = filters;
+        const { data } = await restQuery(key, table, restParams);
+        return (data || []).map(r => ({ ...r, _project: key }));
+      } catch { return []; }
+    })
+  );
+  return results.flat();
+}
+
 async function fetchMessages() {
   try {
-    const results = await Promise.all(
-      Object.entries(clients).map(async ([key, client]) => {
-        try {
-          const { data, error } = await client
-            .from('agent_messages')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(30);
-          if (error) throw error;
-          return (data || []).map(m => ({ ...m, _project: key }));
-        } catch { return []; }
-      })
-    );
-    return results.flat().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+    const all = await fetchFromAllProjects('agent_messages', { limit: 30 });
+    return all.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
   } catch (e) {
     console.warn('agent_messages:', e.message);
     return [];
@@ -822,21 +895,12 @@ async function fetchMessages() {
 
 async function fetchDecisions() {
   try {
-    const results = await Promise.all(
-      Object.entries(clients).map(async ([key, client]) => {
-        try {
-          const { data, error } = await client
-            .from('agent_approvals')
-            .select('*')
-            .in('status', ['approved', 'rejected'])
-            .order('decided_at', { ascending: false })
-            .limit(10);
-          if (error) throw error;
-          return (data || []).map(d => ({ ...d, _project: key }));
-        } catch { return []; }
-      })
-    );
-    return results.flat().sort((a, b) => new Date(b.decided_at || b.created_at) - new Date(a.decided_at || a.created_at)).slice(0, 15);
+    const all = await fetchFromAllProjects('agent_approvals', {
+      inFilter: ['status', ['approved', 'rejected']],
+      orderBy: 'decided_at',
+      limit: 10
+    });
+    return all.sort((a, b) => new Date(b.decided_at || b.created_at) - new Date(a.decided_at || a.created_at)).slice(0, 15);
   } catch (e) {
     console.warn('decisions:', e.message);
     return [];
@@ -845,12 +909,17 @@ async function fetchDecisions() {
 
 async function fetchCrossMessages() {
   try {
-    const { data, error } = await clients.cbm
-      .from('cross_project_messages')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20);
-    if (error) throw error;
+    if (clients.cbm) {
+      const { data, error } = await clients.cbm
+        .from('cross_project_messages')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (!error && data) return data;
+    }
+  } catch {}
+  try {
+    const { data } = await restQuery('cbm', 'cross_project_messages', { order: 'created_at.desc', limit: 20 });
     return data || [];
   } catch (e) {
     console.warn('cross_project_messages:', e.message);
@@ -860,12 +929,20 @@ async function fetchCrossMessages() {
 
 async function fetchApprovals(projectKey) {
   try {
-    const { data, error } = await clients[projectKey]
-      .from('agent_approvals')
-      .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
+    if (clients[projectKey]) {
+      const { data, error } = await clients[projectKey]
+        .from('agent_approvals')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (!error && data) return data.map(r => ({ ...r, _project: projectKey }));
+    }
+  } catch {}
+  try {
+    const { data } = await restQuery(projectKey, 'agent_approvals', {
+      order: 'created_at.desc',
+      filters: { status: 'eq.pending' }
+    });
     return (data || []).map(r => ({ ...r, _project: projectKey }));
   } catch (e) {
     console.warn(`agent_approvals [${projectKey}]:`, e.message);
@@ -875,12 +952,17 @@ async function fetchApprovals(projectKey) {
 
 async function fetchHealthSnapshots() {
   try {
-    const { data, error } = await clients.cbm
-      .from('system_health_snapshots')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(10);
-    if (error) throw error;
+    if (clients.cbm) {
+      const { data, error } = await clients.cbm
+        .from('system_health_snapshots')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (!error && data) return data;
+    }
+  } catch {}
+  try {
+    const { data } = await restQuery('cbm', 'system_health_snapshots', { order: 'created_at.desc', limit: 10 });
     return data || [];
   } catch (e) {
     console.warn('system_health_snapshots:', e.message);
@@ -1103,13 +1185,22 @@ function renderHealth(snapshots) {
 
 async function fetchAgentReports() {
   try {
-    const { data, error } = await clients.cbm
-      .from('agent_messages')
-      .select('*')
-      .in('message_type', ['briefing', 'financial_report', 'sla_report', 'audit_report', 'gap_analysis'])
-      .order('created_at', { ascending: false })
-      .limit(12);
-    if (error) throw error;
+    if (clients.cbm) {
+      const { data, error } = await clients.cbm
+        .from('agent_messages')
+        .select('*')
+        .in('message_type', ['briefing', 'financial_report', 'sla_report', 'audit_report', 'gap_analysis'])
+        .order('created_at', { ascending: false })
+        .limit(12);
+      if (!error && data) return data;
+    }
+  } catch {}
+  try {
+    const { data } = await restQuery('cbm', 'agent_messages', {
+      order: 'created_at.desc',
+      limit: 12,
+      filters: { message_type: 'in.(briefing,financial_report,sla_report,audit_report,gap_analysis)' }
+    });
     return data || [];
   } catch (e) {
     console.warn('agent reports:', e.message);
@@ -1119,13 +1210,26 @@ async function fetchAgentReports() {
 
 async function fetchCronJobs() {
   try {
+    const projectKeys = Object.keys(PROJECT_CONFIG);
     const results = await Promise.all(
-      Object.entries(clients).map(async ([key, client]) => {
+      projectKeys.map(async (key) => {
         try {
-          const { data, error } = await client.rpc('get_cron_jobs');
-          if (error) throw error;
-          return (data || []).map(j => ({ ...j, _project: key }));
-        } catch { return []; }
+          if (clients[key]) {
+            const { data, error } = await clients[key].rpc('get_cron_jobs');
+            if (!error && data) return data.map(j => ({ ...j, _project: key }));
+          }
+        } catch {}
+        // RPC fallback via REST
+        try {
+          const cfg = PROJECT_CONFIG[key];
+          const res = await fetch(cfg.url + '/rest/v1/rpc/get_cron_jobs', {
+            method: 'POST',
+            headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key, 'Content-Type': 'application/json' },
+            body: '{}'
+          });
+          if (res.ok) { const data = await res.json(); return (data || []).map(j => ({ ...j, _project: key })); }
+        } catch {}
+        return [];
       })
     );
     return results.flat().sort((a, b) => (a._project + a.jobname).localeCompare(b._project + b.jobname));
@@ -1186,40 +1290,70 @@ function renderCronJobs(jobs) {
 
 async function fetchFinancialData() {
   try {
-    const [{ data: costs }, { data: reports }] = await Promise.all([
-      clients.cbm.from('infrastructure_costs').select('*').order('period_end', { ascending: false }).limit(20),
-      clients.cbm.from('subsidiary_reports').select('*').order('created_at', { ascending: false }).limit(10)
+    const [costsResult, reportsResult] = await Promise.all([
+      (async () => {
+        try {
+          if (clients.cbm) {
+            const { data, error } = await clients.cbm.from('infrastructure_costs').select('*').order('period_end', { ascending: false }).limit(20);
+            if (!error && data) return data;
+          }
+        } catch {}
+        const { data } = await restQuery('cbm', 'infrastructure_costs', { order: 'period_end.desc', limit: 20 });
+        return data || [];
+      })(),
+      (async () => {
+        try {
+          if (clients.cbm) {
+            const { data, error } = await clients.cbm.from('subsidiary_reports').select('*').order('created_at', { ascending: false }).limit(10);
+            if (!error && data) return data;
+          }
+        } catch {}
+        const { data } = await restQuery('cbm', 'subsidiary_reports', { order: 'created_at.desc', limit: 10 });
+        return data || [];
+      })()
     ]);
-    return { costs: costs || [], reports: reports || [] };
+    return { costs: costsResult || [], reports: reportsResult || [] };
   } catch (e) { console.warn('financial:', e.message); return { costs: [], reports: [] }; }
 }
 
-async function fetchPlugins() {
+async function fetchSingleTable(table, params = {}) {
+  const projectKey = params.project || 'cbm';
   try {
-    const { data } = await clients.cbm.from('plugin_inventory').select('*').order('created_at', { ascending: false });
+    if (clients[projectKey]) {
+      const q = clients[projectKey].from(table).select(params.select || '*');
+      if (params.orderBy) q.order(params.orderBy, { ascending: params.ascending ?? false });
+      if (params.limit) q.limit(params.limit);
+      if (params.eq) for (const [k,v] of Object.entries(params.eq)) q.eq(k, v);
+      const { data, error } = await q;
+      if (!error && data) return data;
+    }
+  } catch {}
+  try {
+    const restParams = {};
+    if (params.orderBy) restParams.order = params.orderBy + (params.ascending ? '.asc' : '.desc');
+    if (params.limit) restParams.limit = params.limit;
+    const filters = {};
+    if (params.eq) for (const [k,v] of Object.entries(params.eq)) filters[k] = 'eq.' + v;
+    restParams.filters = filters;
+    const { data } = await restQuery(projectKey, table, restParams);
     return data || [];
-  } catch (e) { console.warn('plugins:', e.message); return []; }
+  } catch (e) { console.warn(table + ':', e.message); return []; }
+}
+
+async function fetchPlugins() {
+  return fetchSingleTable('plugin_inventory', { orderBy: 'created_at' });
 }
 
 async function fetchOrgChart() {
-  try {
-    const { data } = await clients.cbm.from('agent_org_chart').select('*').eq('is_active', true).order('department');
-    return data || [];
-  } catch (e) { console.warn('org_chart:', e.message); return []; }
+  return fetchSingleTable('agent_org_chart', { orderBy: 'department', ascending: true, eq: { is_active: true } });
 }
 
 async function fetchEngineering() {
-  try {
-    const { data } = await clients.cbm.from('engineering_backlog').select('*').order('created_at', { ascending: false }).limit(20);
-    return data || [];
-  } catch (e) { console.warn('engineering:', e.message); return []; }
+  return fetchSingleTable('engineering_backlog', { orderBy: 'created_at', limit: 20 });
 }
 
 async function fetchEvolution() {
-  try {
-    const { data } = await clients.cbm.from('system_evolution_log').select('*').order('created_at', { ascending: false }).limit(20);
-    return data || [];
-  } catch (e) { console.warn('evolution:', e.message); return []; }
+  return fetchSingleTable('system_evolution_log', { orderBy: 'created_at', limit: 20 });
 }
 
 function renderFinance(fin) {
@@ -1323,15 +1457,24 @@ async function handleApproval(projectKey, id, newStatus, btn) {
   const buttons = row.querySelectorAll('button');
   buttons.forEach(b => b.disabled = true);
   try {
-    const { error } = await clients[projectKey]
-      .from('agent_approvals')
-      .update({
-        status: newStatus,
-        decided_at: new Date().toISOString(),
-        decided_by: 'admin_dashboard'
-      })
-      .eq('id', id);
-    if (error) throw error;
+    let success = false;
+    if (clients[projectKey]) {
+      const { error } = await clients[projectKey]
+        .from('agent_approvals')
+        .update({ status: newStatus, decided_at: new Date().toISOString(), decided_by: 'admin_dashboard' })
+        .eq('id', id);
+      if (!error) success = true;
+    }
+    if (!success) {
+      // REST fallback for update
+      const cfg = PROJECT_CONFIG[projectKey];
+      const res = await fetch(cfg.url + '/rest/v1/agent_approvals?id=eq.' + id, {
+        method: 'PATCH',
+        headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ status: newStatus, decided_at: new Date().toISOString(), decided_by: 'admin_dashboard' })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+    }
     row.style.opacity = '0.4';
     setTimeout(() => refreshAll(), 1000);
   } catch (e) {
@@ -1584,6 +1727,7 @@ async function quickCmd(command) {
 
 // ── Realtime Subscriptions (Live agent conversations) ──
 function setupRealtime() {
+  if (!clients || Object.keys(clients).length === 0) return;
   Object.entries(clients).forEach(([key, client]) => {
     // Live messages
     client.channel('live-messages-' + key)
@@ -1622,11 +1766,17 @@ function addToLiveFeed(msg) {
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {
-  // Quick client sanity check
-  if (typeof supabase === 'undefined' || !clients.cbm) {
-    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">Supabase client yuklenemedi! CDN erisim sorunu olabilir.</td></tr>';
+  console.log('[INIT] DOMContentLoaded fired');
+  console.log('[INIT] supabase global:', typeof supabase, supabase ? Object.keys(supabase).slice(0, 5) : 'N/A');
+  console.log('[INIT] clients:', Object.keys(clients));
+  console.log('[INIT] REST fallback available:', typeof restQuery === 'function');
+
+  // Even if supabase-js failed, REST fallback will work
+  if (Object.keys(clients).length === 0 && typeof restQuery !== 'function') {
+    document.getElementById('agentTableBody').innerHTML = '<tr><td colspan="6" style="color:red">Ne supabase-js ne de REST fallback calisiyor!</td></tr>';
     return;
   }
+
   try {
     await refreshAll();
   } catch(e) {
@@ -1635,7 +1785,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   setupAutoRefresh();
   startFeed();
-  setupRealtime();
+  if (Object.keys(clients).length > 0) setupRealtime();
 });
 </script>
 </body>
