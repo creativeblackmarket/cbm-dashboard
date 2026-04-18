@@ -783,14 +783,17 @@ function esc(s) {
 // ── Data Fetching ──
 async function fetchAgentRegistry(projectKey) {
   try {
-    const { data, error } = await clients[projectKey]
+    const client = clients[projectKey];
+    if (!client) { console.warn('No client for', projectKey); return []; }
+    const { data, error } = await client
       .from('agent_registry')
       .select('*')
-      .order('last_heartbeat', { ascending: false, nullsFirst: false });
-    if (error) throw error;
+      .order('agent_id', { ascending: true });
+    if (error) { console.error(`agent_registry [${projectKey}] error:`, error); throw error; }
+    console.log(`agent_registry [${projectKey}]: ${(data||[]).length} agents loaded`);
     return data || [];
   } catch (e) {
-    console.warn(`agent_registry [${projectKey}]:`, e.message);
+    console.error(`agent_registry [${projectKey}] FAILED:`, e);
     return [];
   }
 }
